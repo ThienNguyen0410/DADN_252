@@ -1,0 +1,324 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Rajdhani:wght@500;600;700&display=swap');
+
+:root {
+  --iot-bg: #08131f;
+  --iot-panel: rgba(6, 20, 34, 0.72);
+  --iot-stroke: rgba(77, 188, 255, 0.38);
+  --iot-text: #dff5ff;
+  --iot-muted: #82abc4;
+  --iot-accent: #16d8ff;
+  --iot-accent-2: #27ffa8;
+  --iot-danger: #ff6974;
+}
+
+.iot-login-page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 2rem;
+  color: var(--iot-text);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(22, 216, 255, 0.2), transparent 45%),
+    radial-gradient(circle at 88% 82%, rgba(39, 255, 168, 0.18), transparent 48%),
+    linear-gradient(120deg, #040b15 0%, #08131f 45%, #03101a 100%);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.iot-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(16, 78, 116, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 78, 116, 0.3) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at center, black 25%, transparent 90%);
+  pointer-events: none;
+}
+
+.iot-glow {
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.iot-glow-left {
+  top: 18%;
+  left: -80px;
+  background: radial-gradient(circle, rgba(22, 216, 255, 0.45), transparent 68%);
+  animation: orbit 11s ease-in-out infinite;
+}
+
+.iot-glow-right {
+  bottom: 12%;
+  right: -90px;
+  background: radial-gradient(circle, rgba(39, 255, 168, 0.36), transparent 70%);
+  animation: orbit 13s ease-in-out infinite reverse;
+}
+
+.iot-login-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 1.4rem;
+  align-items: stretch;
+}
+
+.iot-panel {
+  border: 1px solid var(--iot-stroke);
+  background: var(--iot-panel);
+  border-radius: 24px;
+  backdrop-filter: blur(16px);
+  box-shadow:
+    inset 0 0 0 1px rgba(39, 255, 168, 0.08),
+    0 24px 60px rgba(1, 9, 18, 0.55);
+}
+
+.intro-panel {
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.intro-panel::after {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  border: 1px dashed rgba(130, 171, 196, 0.26);
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.panel-kicker {
+  margin: 0;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.74rem;
+  color: var(--iot-accent);
+}
+
+.intro-panel h1 {
+  margin: 0.8rem 0;
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(1.65rem, 4vw, 2.55rem);
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.panel-copy {
+  margin: 0;
+  max-width: 36ch;
+  font-size: 1.04rem;
+  color: var(--iot-muted);
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+  display: grid;
+  gap: 0.62rem;
+}
+
+.feature-list li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.feature-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--iot-accent-2);
+  box-shadow: 0 0 0 4px rgba(39, 255, 168, 0.2), 0 0 12px rgba(39, 255, 168, 0.7);
+}
+
+.signal-strip {
+  margin-top: 1.8rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-end;
+  height: 48px;
+}
+
+.signal-strip span {
+  flex: 1;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, var(--iot-accent), rgba(22, 216, 255, 0.18));
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.signal-strip span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.signal-strip span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.signal-strip span:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.form-panel {
+  padding: 1.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.68rem;
+}
+
+.form-head p {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.15em;
+  font-size: 0.78rem;
+  color: var(--iot-muted);
+  text-transform: uppercase;
+}
+
+.form-head h2 {
+  margin: 0.4rem 0 0.7rem;
+  font-size: 1.9rem;
+  font-family: 'Orbitron', sans-serif;
+  text-transform: uppercase;
+}
+
+.form-panel label {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.form-panel input {
+  border: 1px solid rgba(77, 188, 255, 0.34);
+  border-radius: 12px;
+  padding: 0.78rem 0.85rem;
+  background: rgba(8, 30, 51, 0.56);
+  color: var(--iot-text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-panel input::placeholder {
+  color: #7ea6bf;
+}
+
+.form-panel input:focus {
+  outline: none;
+  border-color: var(--iot-accent);
+  box-shadow: 0 0 0 3px rgba(22, 216, 255, 0.2);
+}
+
+.status-row {
+  margin-top: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-row p {
+  margin: 0;
+  font-size: 0.96rem;
+  color: var(--iot-muted);
+}
+
+.status-led {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--iot-accent-2);
+  box-shadow: 0 0 11px rgba(39, 255, 168, 0.82);
+  animation: blink 1.6s infinite;
+}
+
+.error-text {
+  margin: 0;
+  color: var(--iot-danger);
+  font-weight: 700;
+}
+
+.login-btn {
+  margin-top: 0.4rem;
+  border: none;
+  border-radius: 12px;
+  padding: 0.84rem 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #04111d;
+  background: linear-gradient(120deg, var(--iot-accent), var(--iot-accent-2));
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(22, 216, 255, 0.3);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes orbit {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(18px);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 980px) {
+  .iot-login-shell {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .iot-login-page {
+    padding: 1rem;
+  }
+
+  .intro-panel,
+  .form-panel {
+    padding: 1.2rem;
+    border-radius: 16px;
+  }
+
+  .form-head h2 {
+    font-size: 1.5rem;
+  }
+}
