@@ -5,6 +5,7 @@ import login from './routes/login.ts';
 import fan from './routes/fan.ts';
 import light from './routes/light.ts';
 import cors from 'cors';
+import security from './routes/security.ts';
 
 const app = express();
 const PORT = 3000;
@@ -15,6 +16,7 @@ app.use('/api', sensorRoutes);
 app.use('/api', login);
 app.use('/api', fan);
 app.use('/api', light);
+app.use('/api', security);
 app.get('/', (req: Request, res: Response) => {
     res.send("Hello IOT project!");
 })
