@@ -17,7 +17,7 @@ function IndexPage() {
   const [isFanOn, setIsFanOn] = useState(false)
   const [notifications, setNotifications] = useState<SignalNotification[]>([])
   const [isScanning, setIsScanning] = useState(false)
-  const [volume, setVolume] = useState(0)
+  const [tempSignal, setTempSignal] = useState(0)
   const [scanStatus, setScanStatus] = useState('Ready to scan QR device.')
   const [telemetry, setTelemetry] = useState<Telemetry>({
     temperature: 26.4,
@@ -52,19 +52,39 @@ function IndexPage() {
 
   const updateTelemetry = async () => {
     try {
-      const res = await fetch(`${API}/humidity`)
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status}`)
+      //Humidity API call
+      const humidApi = await fetch(`${API}/humidity`)
+      if (!humidApi.ok) {
+        throw new Error(`API error: ${humidApi.status}`)
       }
 
-      const data = await res.json()
-      const humidityData = Number(data?.[0]?.value)
+      const humidData = await humidApi.json()
+      const humidityData = Number(humidData?.[0]?.value)
       if (Number.isNaN(humidityData)) {
         throw new Error('Invalid humidity payload')
       }
 
+      //Temperature API call
+      const tempApi = await fetch(`${API}/temperature`)
+      if (!tempApi.ok) {
+        throw new Error(`API error: ${tempApi.status}`)
+      }
+
+      const tempData = await tempApi.json()
+      const temperature = Number(tempData?.[0]?.value)
+      if (Number.isNaN(temperature)) {
+        throw new Error('Invalid temperature payload')
+      }
+      if (temperature > tempSignal) {
+        setIsFanOn(true)
+      }
+
+      else if (temperature < tempSignal) {
+        setIsFanOn(false)
+      }
+
       const nextTelemetry: Telemetry = {
-        temperature: 24 + Math.random() * 8,
+        temperature: temperature,
         humidity: humidityData,
         voltage: 214 + Math.random() * 15,
         noise: 28 + Math.random() * 18,
@@ -104,6 +124,22 @@ function IndexPage() {
     const sample = signalTemplates[Math.floor(Math.random() * signalTemplates.length)]
     addNotification(sample.title, sample.detail)
     updateTelemetry()
+  }
+
+  const submitSignal =  (temperature: number, humidity: number) => {
+    addNotification('Custom signal submitted', `Temperature: ${temperature} C, Humidity: ${humidity} %`)
+    try {
+       fetch(`${API}/tempSignal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ temperature})
+      })
+      setTempSignal(temperature)
+      console.log('Send signal successfully')
+    }
+    catch(err) {
+      addNotification('Signal error', 'Failed to submit custom signal.')
+    }
   }
 
   const startQrScan = () => {
@@ -146,7 +182,7 @@ function IndexPage() {
             onToggleLight={toggleLight}
             onToggleFan={toggleFan}
           />
-          <SignalCenterCard onReceiveSignal={receiveSignal} onSyncTelemetry={updateTelemetry} />
+          <SignalCenterCard onReceiveSignal={receiveSignal} onSyncTelemetry={updateTelemetry} submitSignal={submitSignal} />
           <TelemetryCard telemetry={telemetry} />
           <QrScannerCard isScanning={isScanning} scanStatus={scanStatus} onStartScan={startQrScan} />
           <NotificationsCard notifications={notifications} />

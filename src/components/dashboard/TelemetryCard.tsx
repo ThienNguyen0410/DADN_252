@@ -4,6 +4,14 @@ type TelemetryCardProps = {
   telemetry: Telemetry
 }
 
+function moveTohumidChart() {
+  window.location.href = '/humidChart'
+}
+
+function moveToTempChart() {
+  window.location.href = '/tempChart'
+}
+
 function TelemetryCard({ telemetry }: TelemetryCardProps) {
   return (
     <article className="glass-card metrics-card">
@@ -14,19 +22,21 @@ function TelemetryCard({ telemetry }: TelemetryCardProps) {
         <div className="telemetry-item">
           <span>Temp</span>
           <strong>{telemetry.temperature.toFixed(1)} C</strong>
+          <button className="btn btn-primary" onClick={moveToTempChart} type="button">View</button>
         </div>
         <div className="telemetry-item">
           <span>Humidity</span>
           <strong>{telemetry.humidity.toFixed(0)} %</strong>
+          <button className="btn btn-primary"  onClick={moveTohumidChart} type="button">View</button>
         </div>
-        <div className="telemetry-item">
+        {/* <div className="telemetry-item">
           <span>Voltage</span>
           <strong>{telemetry.voltage.toFixed(0)} V</strong>
         </div>
         <div className="telemetry-item">
           <span>Noise</span>
           <strong>{telemetry.noise.toFixed(0)} dB</strong>
-        </div>
+        </div> */}
       </div>
 
       <p className="telemetry-time">Updated at: {telemetry.updatedAt}</p>

@@ -23,7 +23,7 @@ class AdafruitService {
   }
 
   async getTemperature() {
-    const url = `https://io.adafruit.com/api/v2/KenElem/feeds/temperature/data`;
+    const url = `https://io.adafruit.com/api/v2/KenElem/feeds/temparature/data`;
 
     const res = await fetch(url);
     const data = await res.json();
