@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import DeviceControlsCard from '../components/dashboard/DeviceControlsCard'
 import NotificationsCard from '../components/dashboard/NotificationsCard'
-import QrScannerCard from '../components/dashboard/QrScannerCard'
+import SecurityCameraCard from '../components/dashboard/SecurityCameraCard.tsx'
 import SignalCenterCard from '../components/dashboard/SignalCenterCard'
 import TelemetryCard from '../components/dashboard/TelemetryCard'
 import Topbar from '../components/dashboard/Topbar'
@@ -10,24 +10,49 @@ import type { SignalNotification, Telemetry } from '../types/dashboard'
 import { getCurrentTime } from '../utils/time'
 
 function IndexPage() {
-  const API = '/api'
+const API = '/api';
+const [isProcessing, setIsProcessing] = useState(false);
 
   const [displayName] = useState('thien.iot')
   const [isLightOn, setIsLightOn] = useState(false)
   const [isFanOn, setIsFanOn] = useState(false)
   const [notifications, setNotifications] = useState<SignalNotification[]>([])
-  const [isScanning, setIsScanning] = useState(false)
-  const [tempSignal, setTempSignal] = useState(0)
-  const [scanStatus, setScanStatus] = useState('Ready to scan QR device.')
+
   const [telemetry, setTelemetry] = useState<Telemetry>({
-    temperature: 26.4,
+    temperature: 25,
     humidity: 56,
-    voltage: 221,
-    noise: 34,
     updatedAt: getCurrentTime(),
   })
 
 
+  // --- CÁC STATE MỚI CHO CAMERA ---
+  const [cameraImage, setCameraImage] = useState<string | null>(null)
+  const [cameraStatus, setCameraStatus] = useState('Sẵn sàng hoạt động')
+  const [isStranger, setIsStranger] = useState(false)
+
+const processSecurityData = (data: any) => {
+  if (data.status === "success" || data.triggerDetected) {
+    const recognitionResult = Number(data.recognition);
+
+    if (recognitionResult === 2) {
+      setCameraImage(`${data.image}?t=${Date.now()}`); // Chỉ hiện ảnh khi là người lạ
+      setCameraStatus('🚨 CẢNH BÁO: NGƯỜI LẠ!');
+      setIsStranger(true);
+    } else if (recognitionResult === 1) {
+      setCameraImage(`${data.image}?t=${Date.now()}`); // Hiện ảnh khi là người quen
+      setCameraStatus('✅ XÁC NHẬN: NGƯỜI QUEN');
+      setIsStranger(false);
+    } else {
+      // FIX: Nếu không thấy mặt, ta xóa luôn ảnh cũ để tránh nhầm lẫn
+      setCameraImage(null); 
+      setCameraImage(`${data.image}?t=${Date.now()}`);
+      setCameraStatus('🔍 Không phát hiện khuôn mặt rõ ràng.');
+      setIsStranger(false);
+    }
+    return true;
+  }
+  return false;
+};
   const scanTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -38,6 +63,32 @@ function IndexPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+  const checkTrigger = async () => {
+    if (!isProcessing) {
+      try {
+        // Hỏi Server xem có ai trigger không
+        const res = await fetch(`${API}/security/check`);
+        const data = await res.json();
+        
+        if (data.triggerDetected) { // Nếu Backend báo có trigger
+          setIsProcessing(true);
+          // Cập nhật giao diện từ dữ liệu Backend trả về
+          processSecurityData(data);
+          
+          // Sau 10 giây cho phép nhận trigger mới
+          setTimeout(() => setIsProcessing(false), 5000);
+        }
+      } catch (err) {
+        console.log("Đang đợi tín hiệu từ Adafruit...");
+      }
+    }
+  };
+
+  const timer = setInterval(checkTrigger, 3000); // Check mỗi 3 giây
+  return () => clearInterval(timer);
+}, [isProcessing]);
 
   const addNotification = (title: string, detail: string) => {
     const newNotification: SignalNotification = {
@@ -51,52 +102,41 @@ function IndexPage() {
   }
 
   const updateTelemetry = async () => {
-    try {
-      //Humidity API call
-      const humidApi = await fetch(`${API}/humidity`)
-      if (!humidApi.ok) {
-        throw new Error(`API error: ${humidApi.status}`)
-      }
-
-      const humidData = await humidApi.json()
-      const humidityData = Number(humidData?.[0]?.value)
-      if (Number.isNaN(humidityData)) {
-        throw new Error('Invalid humidity payload')
-      }
-
-      //Temperature API call
-      const tempApi = await fetch(`${API}/temperature`)
-      if (!tempApi.ok) {
-        throw new Error(`API error: ${tempApi.status}`)
-      }
-
-      const tempData = await tempApi.json()
-      const temperature = Number(tempData?.[0]?.value)
-      if (Number.isNaN(temperature)) {
-        throw new Error('Invalid temperature payload')
-      }
-      if (temperature > tempSignal) {
-        setIsFanOn(true)
-      }
-
-      else if (temperature < tempSignal) {
-        setIsFanOn(false)
-      }
-
-      const nextTelemetry: Telemetry = {
-        temperature: temperature,
-        humidity: humidityData,
-        voltage: 214 + Math.random() * 15,
-        noise: 28 + Math.random() * 18,
-        updatedAt: getCurrentTime(),
-      }
-
-      setTelemetry(nextTelemetry)
-      addNotification('Telemetry synced', 'Device metrics updated from gateway.')
-    } catch {
-      addNotification('Telemetry error', 'Failed to fetch telemetry data from device.')
+  try {
+    const res = await fetch(`${API}/humidity`)
+    
+    if (!res.ok) {
+      throw new Error(`Humidity API failed: ${res.status}`)
     }
+    
+    const data = await res.json()
+    const humidityData = Number(data?.[0]?.value)
+
+    const tempAPI = await fetch(`${API}/temperature`)
+    
+    if (!tempAPI.ok) { 
+      throw new Error(`Temperature API failed: ${tempAPI.status}`)
+    }
+    
+    const tempData = await tempAPI.json()
+    const temperature = Number(tempData?.[0]?.value)
+
+    if (Number.isNaN(humidityData) || Number.isNaN(temperature)) {
+      console.error('Invalid sensor data:', { humidityData, temperature, data, tempData })
+      throw new Error('Invalid data from API')
+    }
+
+    setTelemetry({
+      temperature,
+      humidity: humidityData,
+      updatedAt: getCurrentTime(),
+    })
+    addNotification('Telemetry synced', 'Device metrics updated')
+  } catch (err) {
+    console.error('Telemetry fetch error:', err)  // ← Thêm log chi tiết
+    addNotification('Telemetry error', err instanceof Error ? err.message : 'Failed to fetch data')
   }
+}
 
   const toggleLight = () => {
     fetch(`${API}/light`, { 
@@ -126,44 +166,88 @@ function IndexPage() {
     updateTelemetry()
   }
 
-  const submitSignal =  (temperature: number, humidity: number) => {
-    addNotification('Custom signal submitted', `Temperature: ${temperature} C, Humidity: ${humidity} %`)
+  const submitSignal = async (temperature: number, humidity: number) => {
     try {
-       fetch(`${API}/tempSignal`, {
+      const res = await fetch(`${API}/signal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ temperature})
+        body: JSON.stringify({ temperature, humidity })
       })
-      setTempSignal(temperature)
-      console.log('Send signal successfully')
-    }
-    catch(err) {
-      addNotification('Signal error', 'Failed to submit custom signal.')
+      if (res.ok) {
+        addNotification('Signal submitted', `Temperature: ${temperature}°C, Humidity: ${humidity}%`)
+      } else {
+        addNotification('Signal error', 'Failed to submit signal')
+      }
+    } catch (error) {
+      addNotification('Signal error', 'Failed to submit signal to server')
     }
   }
 
-  const startQrScan = () => {
-    if (isScanning) {
-      return
+  const triggerCamera = async () => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
+    setCameraStatus('Đang yêu cầu Camera chụp ảnh...');
+    try {
+      const res = await fetch(`${API}/security/check?manual=true`); // Gọi cùng 1 API để Backend điều phối
+      const data = await res.json();
+      
+      const hasResult = processSecurityData(data);
+      if (!hasResult) setCameraStatus('Camera không phản hồi.');
+      
+    } catch (error) {
+      setCameraStatus('Lỗi kết nối Server!');
+    } finally {
+      setIsProcessing(false);
     }
+  };
 
-    setIsScanning(true)
-    setScanStatus('Scanning QR code...')
+    const approveStranger = async () => {
+    try {
+      setCameraStatus('Đang xử lý phê duyệt...');
+      const res = await fetch(`${API}/security/approve`, { method: 'POST' });
+      if (res.ok) {
+        setCameraStatus('Đã phê duyệt. Chào mừng!');
+        setIsStranger(false);
+        setCameraImage(null);
+        addNotification('Security', 'Đã cập nhật danh sách người quen.');
+      }
+    } catch (error) {
+      setCameraStatus('Lỗi kết nối!');
+    }
+  };
 
-    scanTimeoutRef.current = window.setTimeout(() => {
-      const deviceCode = `IOT-${Math.floor(1000 + Math.random() * 9000)}`
-      setScanStatus(`Device linked: ${deviceCode}`)
-      setIsScanning(false)
-      addNotification('QR linked', `${deviceCode} has been added to your system.`)
-    }, 1600)
-  }
+  const rejectStranger = async () => {
+    try {
+      await fetch(`${API}/security/reject`, { method: 'POST' });
+      setCameraStatus('Đã từ chối truy cập.');
+      setIsStranger(false);
+      setCameraImage(null);
+      addNotification('Security', 'Đã xua đuổi người lạ.');
+    } catch (error) {
+      setCameraStatus('Lỗi kết nối!');
+    }
+  };
+
+  const allowStranger = async () => {
+    try {
+      setCameraStatus('Đang mở cửa tạm thời...');
+      const res = await fetch(`${API}/security/allow`, { method: 'POST' });
+      if (res.ok) {
+        setCameraStatus('Đã mở cửa (Không lưu mặt).');
+        setIsStranger(false);
+      }
+    } catch (error) {
+      setCameraStatus('Lỗi kết nối!');
+    }
+  };
 
   const handleLogout = () => {
     setNotifications([])
     setIsLightOn(false)
     setIsFanOn(false)
-    setIsScanning(false)
-    setScanStatus('Ready to scan QR device.')
+    setCameraImage(null)
+    setIsStranger(false)
     window.location.href = '/login'
   }
 
@@ -184,7 +268,15 @@ function IndexPage() {
           />
           <SignalCenterCard onReceiveSignal={receiveSignal} onSyncTelemetry={updateTelemetry} submitSignal={submitSignal} />
           <TelemetryCard telemetry={telemetry} />
-          <QrScannerCard isScanning={isScanning} scanStatus={scanStatus} onStartScan={startQrScan} />
+          <SecurityCameraCard 
+            imageUrl={cameraImage}
+            statusMessage={cameraStatus}
+            isStranger={isStranger}
+            onRequestTrigger={triggerCamera}
+            onApprove={approveStranger}
+            onReject={rejectStranger}
+            onAllow={allowStranger} //
+          />
           <NotificationsCard notifications={notifications} />
         </div>
       </section>

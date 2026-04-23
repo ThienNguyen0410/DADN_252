@@ -8,7 +8,5 @@ export type SignalNotification = {
 export type Telemetry = {
   temperature: number
   humidity: number
-  voltage: number
-  noise: number
   updatedAt: string
 }

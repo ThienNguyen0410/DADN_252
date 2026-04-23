@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/light', async (req, res) => {
     const { status } = req.body;
-    const aioKey = process.env.AIOKEY;
+    const aioKey = process.env.VITE_AIO_KEY;
     console.log('Received light status:', status);
     await fetch("https://io.adafruit.com/api/v2/KenElem/feeds/button-led/data", {
         method: 'POST',
