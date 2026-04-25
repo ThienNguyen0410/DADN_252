@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
 import '../login.css'
 
 
@@ -119,6 +118,10 @@ function Login() {
 					<button type="submit" className="login-btn">
 						Authenticate Node
 					</button>
+
+					<p className="register-link">
+						Don't have an account? <a href="/register">Register here</a>
+					</p>
 				</form>
 			</section>
 		</main>

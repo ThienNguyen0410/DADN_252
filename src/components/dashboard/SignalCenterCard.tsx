@@ -18,13 +18,13 @@ function SignalCenterCard({ onReceiveSignal, onSyncTelemetry, submitSignal }: Si
         <input 
           type="number" 
           value={temperature}
-          onChange={(e) => setTemperature(e.target.value === '' ? 30 : Number(e.target.value))}
+          onChange={(e) => setTemperature(e.target.value === '' ? '' : Number(e.target.value))}
           placeholder="Set temperature" />
         <strong>Humidity:</strong>
         <input 
         type="number" 
         value={humidity}
-        onChange={(e) => setHumidity(e.target.value === '' ? 30 : Number(e.target.value))}
+        onChange={(e) => setHumidity(e.target.value === '' ? '': Number(e.target.value))}
         placeholder="Set humidity" />
         <button className="btn btn-success" onClick = {() => submitSignal(temperature, humidity)} type="button">Submit</button>
         <button className="btn btn-primary" onClick={onReceiveSignal} type="button">Receive signal</button>

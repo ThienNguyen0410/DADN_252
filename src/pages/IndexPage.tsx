@@ -242,6 +242,11 @@ const processSecurityData = (data: any) => {
     }
   };
 
+  //TOPBAR LOGOUT AND RENDER NOTIFICATIONS
+  const renderNotifications = () => {
+    window.location.href = '/notification'
+  }
+
   const handleLogout = () => {
     setNotifications([])
     setIsLightOn(false)
@@ -257,7 +262,8 @@ const processSecurityData = (data: any) => {
       <div className="bg-orb bg-orb-b" />
 
       <section className="dashboard-layout">
-        <Topbar displayName={displayName} onLogout={handleLogout} />
+        <Topbar displayName={displayName} onLogout={handleLogout} 
+            renderNotifications={renderNotifications} notifications={notifications} />
 
         <div className="dashboard-grid">
           <DeviceControlsCard

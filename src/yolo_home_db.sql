@@ -15,6 +15,15 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE user_image (
+    image_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    relation VARCHAR(100),
+    image_url VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+)
+
 -- =========================================
 -- HOMES / ROOMS
 -- =========================================
@@ -82,8 +91,7 @@ CREATE TABLE events (
 CREATE TABLE rules (
     rule_id INT AUTO_INCREMENT PRIMARY KEY,
     rule_name VARCHAR(100),
-    event_type VARCHAR(50),
-    priority INT DEFAULT 1, -- 🔥 ưu tiên rule
+    event_type VARCHAR(50), -- temp high/night
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -94,7 +102,7 @@ CREATE TABLE rules (
 CREATE TABLE rule_conditions (
     condition_id INT AUTO_INCREMENT PRIMARY KEY,
     rule_id INT,
-    field VARCHAR(50), -- value / temperature
+    field VARCHAR(50), -- humidity / temperature
     operator ENUM('>', '<', '=', '>=', '<='),
     value FLOAT,
     FOREIGN KEY (rule_id) REFERENCES rules(rule_id) ON DELETE CASCADE
@@ -107,7 +115,7 @@ CREATE TABLE rule_actions (
     action_id INT AUTO_INCREMENT PRIMARY KEY,
     rule_id INT,
     device_id INT,
-    action VARCHAR(50), -- TURN_ON, OPEN_DOOR
+    action VARCHAR(50), -- TURN ON FAN/TURN ON LIGHT
     FOREIGN KEY (rule_id) REFERENCES rules(rule_id) ON DELETE CASCADE,
     FOREIGN KEY (device_id) REFERENCES devices(device_id)
 );
@@ -157,7 +165,7 @@ CREATE TABLE notifications (
 CREATE TABLE persons (
     person_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100),
-    type ENUM('known', 'unknown')
+    type ENUM('known', 'unknown', 'undefined')
 );
 
 CREATE TABLE face_data (
