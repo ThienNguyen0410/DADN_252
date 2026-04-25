@@ -17,6 +17,8 @@ app.use('/api', sensorRoutes);
 app.use('/api', login);
 app.use('/api', fan);
 app.use('/api', light);
+app.use('/api', tempSignal);
+app.use('/api', security);
 app.get('/', (req: Request, res: Response) => {
     res.send("Hello IOT project!");
 })

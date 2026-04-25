@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/tempSignal', async (req, res) => {
     const { temperature, humidity } = req.body;
-    const aioKey = process.env.AIOKEY;
+    const aioKey = process.env.VITE_AIO_KEY;
     console.log('Received signal - Temperature:', temperature, 'Humidity:', humidity);
     try {
         await fetch("https://io.adafruit.com/api/v2/KenElem/feeds/tem-upper/data", {
