@@ -22,7 +22,7 @@ CREATE TABLE user_image (
     image_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-)
+);
 
 -- =========================================
 -- HOMES / ROOMS

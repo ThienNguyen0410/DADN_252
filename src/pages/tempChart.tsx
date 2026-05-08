@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -13,23 +13,66 @@ import './chart.css'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
 
-function TempChart() {
+interface SensorEntry {
+  time: string
+  temperature: number
+}
 
-  // mock data
-  const dataMock = [
-    { time: '10:00', temperature: 24 },
-    { time: '10:05', temperature: 25 },
-    { time: '10:10', temperature: 26 },
-    { time: '10:15', temperature: 24.5 },
-    { time: '10:20', temperature: 25.5 },
-  ]
+function TempChart() {
+  const [data, setData] = useState<SensorEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchTemperature = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const res = await fetch('http://localhost:3000/api/temperature')
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`)
+
+        const raw: { value: string; created_at: string }[] = await res.json()
+
+        const mapped: SensorEntry[] = raw
+          .slice(0, 20)
+          .reverse()
+          .map((item) => ({
+            time: formatTime(item.created_at),
+            temperature: parseFloat(item.value),
+          }))
+          .filter((item) => !isNaN(item.temperature))
+
+        setData(mapped)
+      } catch (err: any) {
+        console.error('Failed to fetch temperature data:', err)
+        setError('Không thể tải dữ liệu nhiệt độ. Vui lòng thử lại.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTemperature()
+
+    const interval = setInterval(fetchTemperature, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const formatTime = (isoString: string): string => {
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    } catch {
+      return isoString
+    }
+  }
 
   const chartData = {
-    labels: dataMock.map(item => item.time),
+    labels: data.map((item) => item.time),
     datasets: [
       {
         label: 'Temperature (°C)',
-        data: dataMock.map(item => item.temperature),
+        data: data.map((item) => item.temperature),
         borderColor: '#ff8b3d',
         backgroundColor: 'rgba(255, 139, 61, 0.1)',
         borderWidth: 2.5,
@@ -39,9 +82,9 @@ function TempChart() {
         pointBackgroundColor: '#ff8b3d',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
-        pointHoverRadius: 7
-      }
-    ]
+        pointHoverRadius: 7,
+      },
+    ],
   }
 
   const options = {
@@ -55,10 +98,10 @@ function TempChart() {
           font: {
             size: 14,
             family: "'Space Grotesk', sans-serif",
-            weight: '600'
+            weight: '600',
           },
-          padding: 15
-        }
+          padding: 15,
+        },
       },
       tooltip: {
         backgroundColor: 'rgba(17, 38, 65, 0.9)',
@@ -67,48 +110,29 @@ function TempChart() {
         borderColor: 'rgba(255, 139, 61, 0.5)',
         borderWidth: 1,
         padding: 12,
-        titleFont: {
-          size: 14,
-          weight: 'bold' as const
-        },
-        bodyFont: {
-          size: 13
-        }
-      }
+        titleFont: { size: 14, weight: 'bold' as const },
+        bodyFont: { size: 13 },
+      },
     },
     scales: {
       y: {
-        ticks: {
-          color: '#4f6278',
-          font: {
-            size: 12
-          }
-        },
-        grid: {
-          color: 'rgba(255, 139, 61, 0.1)',
-          drawBorder: false
-        }
+        ticks: { color: '#4f6278', font: { size: 12 } },
+        grid: { color: 'rgba(255, 139, 61, 0.1)', drawBorder: false },
       },
       x: {
-        ticks: {
-          color: '#4f6278',
-          font: {
-            size: 12
-          }
-        },
-        grid: {
-          color: 'rgba(255, 139, 61, 0.1)',
-          drawBorder: false
-        }
-      }
-    }
+        ticks: { color: '#4f6278', font: { size: 12 } },
+        grid: { color: 'rgba(255, 139, 61, 0.1)', drawBorder: false },
+      },
+    },
   } as any
 
   return (
     <>
-    <div className='button_back'>
-        <button className="btn btn-secondary" onClick={() => window.history.back() }
-        style={{
+      <div className="button_back">
+        <button
+          className="btn btn-secondary"
+          onClick={() => window.history.back()}
+          style={{
             marginTop: '20px',
             padding: '10px 16px',
             fontSize: '14px',
@@ -117,18 +141,33 @@ function TempChart() {
             backgroundColor: '#4f6278',
             border: 'none',
             cursor: 'pointer',
-            }
-        }
-            >
-        Back
+          }}
+        >
+          Back
         </button>
-    </div>
-    <div className="chart-container">
-      <div className="chart-wrapper">
-        <h3 className="chart-title">Temperature Monitor</h3>
-        <Line data={chartData} options={options} />
       </div>
-    </div>
+
+      <div className="chart-container">
+        <div className="chart-wrapper">
+          <h3 className="chart-title">Temperature Monitor</h3>
+
+          {loading && (
+            <p style={{ textAlign: 'center', color: '#4f6278' }}>Đang tải dữ liệu...</p>
+          )}
+
+          {error && (
+            <p style={{ textAlign: 'center', color: '#e74c3c' }}>{error}</p>
+          )}
+
+          {!loading && !error && data.length === 0 && (
+            <p style={{ textAlign: 'center', color: '#4f6278' }}>Không có dữ liệu.</p>
+          )}
+
+          {!loading && data.length > 0 && (
+            <Line data={chartData} options={options} />
+          )}
+        </div>
+      </div>
     </>
   )
 }

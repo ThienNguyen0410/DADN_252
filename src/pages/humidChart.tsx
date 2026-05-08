@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -8,32 +8,76 @@ import {
   LineElement,
   Tooltip,
   Legend
-} 
-from 'chart.js' 
+} from 'chart.js'
 import './chart.css'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend)
 
-function HumidChart() {
+interface SensorEntry {
+  time: string
+  humidity: number
+}
 
-  // mock data
-  const dataMock = [
-    { time: '10:00', humidity: 60 },
-    { time: '10:05', humidity: 62 },
-    { time: '10:10', humidity: 58 },
-    { time: '10:15', humidity: 65 },
-    { time: '10:20', humidity: 63 },
-    { time: '10:25', humidity: 61 },
-    { time: '10:30', humidity: 64 },
-    { time: '10:35', humidity: 59 },
-  ]
+function HumidChart() {
+  const [data, setData] = useState<SensorEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchHumidity = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        const res = await fetch('http://localhost:3000/api/humidity')
+        if (!res.ok) throw new Error(`HTTP error: ${res.status}`)
+
+        // Adafruit trả về mảng dạng mới nhất trước
+        // Mỗi item: { value: "60.5", created_at: "2026-04-25T10:00:00Z", ... }
+        const raw: { value: string; created_at: string }[] = await res.json()
+
+        // Lấy 20 điểm gần nhất, đảo ngược để hiển thị theo thứ tự thời gian tăng dần
+        const mapped: SensorEntry[] = raw
+          .slice(0, 20)
+          .reverse()
+          .map((item) => ({
+            time: formatTime(item.created_at),
+            humidity: parseFloat(item.value),
+          }))
+          .filter((item) => !isNaN(item.humidity))
+
+        setData(mapped)
+      } catch (err: any) {
+        console.error('Failed to fetch humidity data:', err)
+        setError('Không thể tải dữ liệu độ ẩm. Vui lòng thử lại.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchHumidity()
+
+    // Tự động cập nhật mỗi 30 giây
+    const interval = setInterval(fetchHumidity, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Format ISO string thành "HH:MM" (giờ địa phương)
+  const formatTime = (isoString: string): string => {
+    try {
+      const date = new Date(isoString)
+      return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    } catch {
+      return isoString
+    }
+  }
 
   const chartData = {
-    labels: dataMock.map(item => item.time),
+    labels: data.map((item) => item.time),
     datasets: [
       {
         label: 'Humidity (%)',
-        data: dataMock.map(item => item.humidity),
+        data: data.map((item) => item.humidity),
         borderColor: '#0f8ca0',
         backgroundColor: 'rgba(15, 140, 160, 0.1)',
         borderWidth: 2.5,
@@ -43,9 +87,9 @@ function HumidChart() {
         pointBackgroundColor: '#0f8ca0',
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
-        pointHoverRadius: 7
-      }
-    ]
+        pointHoverRadius: 7,
+      },
+    ],
   }
 
   const options = {
@@ -59,10 +103,10 @@ function HumidChart() {
           font: {
             size: 14,
             family: "'Space Grotesk', sans-serif",
-            weight: '600'
+            weight: '600',
           },
-          padding: 15
-        }
+          padding: 15,
+        },
       },
       tooltip: {
         backgroundColor: 'rgba(17, 38, 65, 0.9)',
@@ -71,48 +115,29 @@ function HumidChart() {
         borderColor: 'rgba(15, 140, 160, 0.5)',
         borderWidth: 1,
         padding: 12,
-        titleFont: {
-          size: 14,
-          weight: 'bold'
-        },
-        bodyFont: {
-          size: 13
-        }
-      }
+        titleFont: { size: 14, weight: 'bold' as const },
+        bodyFont: { size: 13 },
+      },
     },
     scales: {
       y: {
-        ticks: {
-          color: '#4f6278',
-          font: {
-            size: 12
-          }
-        },
-        grid: {
-          color: 'rgba(15, 140, 160, 0.1)',
-          drawBorder: false
-        }
+        ticks: { color: '#4f6278', font: { size: 12 } },
+        grid: { color: 'rgba(15, 140, 160, 0.1)', drawBorder: false },
       },
       x: {
-        ticks: {
-          color: '#4f6278',
-          font: {
-            size: 12
-          }
-        },
-        grid: {
-          color: 'rgba(15, 140, 160, 0.1)',
-          drawBorder: false
-        }
-      }
-    }
+        ticks: { color: '#4f6278', font: { size: 12 } },
+        grid: { color: 'rgba(15, 140, 160, 0.1)', drawBorder: false },
+      },
+    },
   } as any
 
   return (
     <>
-    <div className='button_back'>
-        <button className="btn btn-secondary" onClick={() => window.history.back() }
-        style={{
+      <div className="button_back">
+        <button
+          className="btn btn-secondary"
+          onClick={() => window.history.back()}
+          style={{
             marginTop: '20px',
             padding: '10px 16px',
             fontSize: '14px',
@@ -121,18 +146,33 @@ function HumidChart() {
             backgroundColor: '#4f6278',
             border: 'none',
             cursor: 'pointer',
-            }
-        }
-            >
-        Back
+          }}
+        >
+          Back
         </button>
-    </div>
-    <div className="chart-container">
-      <div className="chart-wrapper">
-        <h3 className="chart-title">Humidity Monitor</h3>
-        <Line data={chartData} options={options} />
       </div>
-    </div>
+
+      <div className="chart-container">
+        <div className="chart-wrapper">
+          <h3 className="chart-title">Humidity Monitor</h3>
+
+          {loading && (
+            <p style={{ textAlign: 'center', color: '#4f6278' }}>Đang tải dữ liệu...</p>
+          )}
+
+          {error && (
+            <p style={{ textAlign: 'center', color: '#e74c3c' }}>{error}</p>
+          )}
+
+          {!loading && !error && data.length === 0 && (
+            <p style={{ textAlign: 'center', color: '#4f6278' }}>Không có dữ liệu.</p>
+          )}
+
+          {!loading && data.length > 0 && (
+            <Line data={chartData} options={options} />
+          )}
+        </div>
+      </div>
     </>
   )
 }
