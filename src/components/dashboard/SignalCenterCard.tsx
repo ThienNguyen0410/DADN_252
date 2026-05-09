@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 type SignalCenterCardProps = {
   onReceiveSignal: () => void
@@ -9,6 +9,19 @@ function SignalCenterCard({ onReceiveSignal, onSyncTelemetry, submitSignal }: Si
   const [temperature, setTemperature] = useState(25)
   const[humidity, setHumidity] = useState(25)
 
+  useEffect(() => {
+
+    const saved = localStorage.getItem("boundTelemetry")
+
+    if (saved) {
+      const parsed = JSON.parse(saved)
+
+      setTemperature(parsed.temperature ?? 25)
+      setHumidity(parsed.humidity ?? 25)
+    }
+
+  }, [])
+
   return (
     <article className="glass-card signal-card">
       <h3>Set humid/temperature bound</h3>
@@ -18,13 +31,13 @@ function SignalCenterCard({ onReceiveSignal, onSyncTelemetry, submitSignal }: Si
         <input 
           type="number" 
           value={temperature}
-          onChange={(e) => setTemperature(e.target.value === '' ? '' : Number(e.target.value))}
+          onChange={(e) => setTemperature(Number(e.target.value))}
           placeholder="Set temperature" />
         <strong>Humidity:</strong>
         <input 
         type="number" 
         value={humidity}
-        onChange={(e) => setHumidity(e.target.value === '' ? '': Number(e.target.value))}
+        onChange={(e) => setHumidity(Number(e.target.value))}
         placeholder="Set humidity" />
         <button className="btn btn-success" onClick = {() => submitSignal(temperature, humidity)} type="button">Submit</button>
         <button className="btn btn-primary" onClick={onReceiveSignal} type="button">Receive signal</button>

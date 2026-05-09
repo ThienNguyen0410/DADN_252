@@ -25,6 +25,12 @@ const [isProcessing, setIsProcessing] = useState(false);
   })
 
 
+  const[boundtelemetry, setBoundTelemetry] = useState<Telemetry>({
+    temperature: 25,
+    humidity: 25,
+    updatedAt: getCurrentTime(),
+  })
+
   // --- CÁC STATE MỚI CHO CAMERA ---
   const [cameraImage, setCameraImage] = useState<string | null>(null)
   const [cameraStatus, setCameraStatus] = useState('Sẵn sàng hoạt động')
@@ -126,6 +132,13 @@ const processSecurityData = (data: any) => {
       throw new Error('Invalid data from API')
     }
 
+     if (temperature > boundtelemetry.temperature) {
+        setIsFanOn(true);
+    } else {
+        setIsFanOn(false);
+    }
+
+
     setTelemetry({
       temperature,
       humidity: humidityData,
@@ -175,6 +188,13 @@ const processSecurityData = (data: any) => {
       })
       if (res.ok) {
         addNotification('Signal submitted', `Temperature: ${temperature}°C, Humidity: ${humidity}%`)
+        const newbound = {
+          temperature,
+          humidity,
+          updatedAt: getCurrentTime()
+        }
+        localStorage.setItem("boundTelemetry", JSON.stringify(newbound))
+        setBoundTelemetry(newbound)
       } else {
         addNotification('Signal error', 'Failed to submit signal')
       }
