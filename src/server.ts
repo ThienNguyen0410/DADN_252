@@ -7,6 +7,7 @@ import light from './routes/light.ts';
 import tempSignal from './routes/signal.ts';
 import cors from 'cors';
 import security from './routes/security.ts';
+import register from './routes/register.ts';
 
 const app = express();
 const PORT = 3000;
@@ -19,6 +20,7 @@ app.use('/api', fan);
 app.use('/api', light);
 app.use('/api', tempSignal);
 app.use('/api', security);
+app.use('/api', register);
 app.get('/', (req: Request, res: Response) => {
     res.send("Hello IOT project!");
 })
