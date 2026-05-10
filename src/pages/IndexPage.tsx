@@ -63,12 +63,32 @@ const processSecurityData = (data: any) => {
 
   useEffect(() => {
     updateTelemetry();
-    return () => {
-      if (scanTimeoutRef.current) {
-        window.clearTimeout(scanTimeoutRef.current)
+    const interval = setInterval(() => {
+      updateTelemetry();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [])
+
+  useEffect(() => {
+    let timeout: number;
+
+    if (telemetry.temperature > boundtelemetry.temperature) {
+      setIsFanOn(true);
+    } else {
+      if (isFanOn) {
+        timeout = window.setTimeout(() => {
+          setIsFanOn(false);
+        }, 10000);
       }
     }
-  }, [])
+
+    return () => clearTimeout(timeout);
+  }, [
+    telemetry.temperature,
+    boundtelemetry.temperature,
+    isFanOn
+  ]);
 
   useEffect(() => {
   const checkTrigger = async () => {
@@ -132,19 +152,13 @@ const processSecurityData = (data: any) => {
       throw new Error('Invalid data from API')
     }
 
-     if (temperature > boundtelemetry.temperature) {
-        setIsFanOn(true);
-    } else {
-        setIsFanOn(false);
-    }
-
-
+    
     setTelemetry({
       temperature,
       humidity: humidityData,
       updatedAt: getCurrentTime(),
     })
-    addNotification('Telemetry synced', 'Device metrics updated')
+    //addNotification('Telemetry synced', 'Device metrics updated')
   } catch (err) {
     console.error('Telemetry fetch error:', err)  // ← Thêm log chi tiết
     addNotification('Telemetry error', err instanceof Error ? err.message : 'Failed to fetch data')
