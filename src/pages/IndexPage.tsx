@@ -59,7 +59,7 @@ const processSecurityData = (data: any) => {
   }
   return false;
 };
-  const scanTimeoutRef = useRef<number | null>(null)
+  //const scanTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     updateTelemetry();
@@ -74,12 +74,14 @@ const processSecurityData = (data: any) => {
     let timeout: number;
 
     if (telemetry.temperature > boundtelemetry.temperature) {
-      setIsFanOn(true);
+      if (!isFanOn)
+        toggleFan();
     } else {
       if (isFanOn) {
         timeout = window.setTimeout(() => {
-          setIsFanOn(false);
+          toggleFan();
         }, 10000);
+      
       }
     }
 
