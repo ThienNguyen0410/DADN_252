@@ -48,7 +48,7 @@ CREATE TABLE devices (
     device_id INT AUTO_INCREMENT PRIMARY KEY,
     room_id INT NOT NULL,
     device_name VARCHAR(100),
-    device_type ENUM('sensor', 'camera', 'fan', 'light', 'door'),
+    device_type ENUM('sensor', 'camera'),
     status BOOLEAN DEFAULT FALSE,
     protocol VARCHAR(50), -- MQTT / Adafruit
     feed_key VARCHAR(100), -- 🔥 liên kết với Adafruit feed
@@ -64,7 +64,6 @@ CREATE TABLE sensor_data (
     device_id INT,
     temperature FLOAT,
     humidity FLOAT,
-    brightness FLOAT,
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (device_id) REFERENCES devices(device_id),
     INDEX idx_device_time (device_id, recorded_at) -- 🔥 tối ưu query
@@ -114,10 +113,8 @@ CREATE TABLE rule_conditions (
 CREATE TABLE rule_actions (
     action_id INT AUTO_INCREMENT PRIMARY KEY,
     rule_id INT,
-    device_id INT,
     action VARCHAR(50), -- TURN ON FAN/TURN ON LIGHT
     FOREIGN KEY (rule_id) REFERENCES rules(rule_id) ON DELETE CASCADE,
-    FOREIGN KEY (device_id) REFERENCES devices(device_id)
 );
 
 -- =========================================

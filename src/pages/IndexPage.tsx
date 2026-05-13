@@ -197,7 +197,7 @@ const processSecurityData = (data: any) => {
 
   const submitSignal = async (temperature: number, humidity: number) => {
     try {
-      const res = await fetch(`${API}/tempSignal`, {
+      const res = await fetch(`${API}/signal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ temperature, humidity })
