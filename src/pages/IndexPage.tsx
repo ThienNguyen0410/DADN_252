@@ -15,8 +15,16 @@ const [isProcessing, setIsProcessing] = useState(false);
 
   const [displayName] = useState('thien.iot')
   const [isLightOn, setIsLightOn] = useState(false)
-  const [isFanOn, setIsFanOn] = useState(false)
+  const [isFanOn, setIsFanOn] = useState(() => {
+    const saved = localStorage.getItem('fan_status')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+
   const [notifications, setNotifications] = useState<SignalNotification[]>([])
+  const [auto, setAuto] = useState(() => {
+    const saved = localStorage.getItem('auto')
+    return saved !== null ? JSON.parse(saved) : true
+  })
 
   const [telemetry, setTelemetry] = useState<Telemetry>({
     temperature: 25,
@@ -30,6 +38,38 @@ const [isProcessing, setIsProcessing] = useState(false);
     humidity: 25,
     updatedAt: getCurrentTime(),
   })
+
+  useEffect(() => {
+    const fetchBoundary = async () => {
+      try {
+        const res = await fetch(`${API}/boundary`);
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch API boundary");
+        }
+
+        const data = await res.json();
+
+        setBoundTelemetry({
+          temperature: data.temperature,
+          humidity: data.humidity,
+          updatedAt: getCurrentTime()
+        });
+      }
+      catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchBoundary();
+
+    const interval = setInterval(() => {
+      fetchBoundary();
+    }, 1000);
+
+    return () => clearInterval(interval);
+
+  }, []);
 
   // --- CÁC STATE MỚI CHO CAMERA ---
   const [cameraImage, setCameraImage] = useState<string | null>(null)
@@ -62,6 +102,10 @@ const processSecurityData = (data: any) => {
   //const scanTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
+    localStorage.setItem('auto', JSON.stringify(auto))
+  }, [auto])
+
+  useEffect(() => {
     updateTelemetry();
     const interval = setInterval(() => {
       updateTelemetry();
@@ -73,23 +117,51 @@ const processSecurityData = (data: any) => {
   useEffect(() => {
     let timeout: number;
 
-    if (telemetry.temperature > boundtelemetry.temperature) {
-      if (!isFanOn)
-        toggleFan();
-    } else {
-      if (isFanOn) {
-        timeout = window.setTimeout(() => {
-          toggleFan();
-        }, 10000);
+    // Nếu auto mode được bật
+    if (auto) {
+      console.log("Auto mode ON - Auto controlling fan");
       
+      if (telemetry.temperature > boundtelemetry.temperature) {
+        // Nhiệt độ cao -> cần bật quạt
+        if (!isFanOn) {
+          console.log("Temperature high, turning ON fan");
+          setIsFanOn(true);
+          
+          fetch(`${API}/fan`, { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: true })
+          })
+          localStorage.setItem("fan_status", JSON.stringify(true));
+          sendNotifications("Temperature", telemetry.temperature, boundtelemetry.temperature, "AUTO TURN ON FAN");
+        }
+      } else {
+        // Nhiệt độ bình thường -> cần tắt quạt
+        if (isFanOn) {
+          timeout = window.setTimeout(() => {
+            console.log("Temperature normal, turning OFF fan");
+            setIsFanOn(false);
+            
+            fetch(`${API}/fan`, { 
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: false })
+            })
+            localStorage.setItem("fan_status", JSON.stringify(false));
+            sendNotifications("Temperature", telemetry.temperature, boundtelemetry.temperature, "AUTO TURN OFF FAN");
+          }, 1000);
+        }
       }
+    } else {
+      console.log("Auto mode OFF - Manual control only");
     }
 
     return () => clearTimeout(timeout);
   }, [
     telemetry.temperature,
     boundtelemetry.temperature,
-    isFanOn
+    isFanOn,
+    auto
   ]);
 
   useEffect(() => {
@@ -167,6 +239,19 @@ const processSecurityData = (data: any) => {
   }
 }
 
+  const sendNotifications = async (field:string, value: number, boundValue: number, action:string) => {
+      try {
+        await fetch(`${API}/notifications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({field, value, boundValue, action})
+      })
+    }
+      catch(err) {
+        console.error(err);
+      }
+  }
+
   const toggleLight = () => {
     fetch(`${API}/light`, { 
       method: 'POST',
@@ -180,13 +265,33 @@ const processSecurityData = (data: any) => {
   }
 
   const toggleFan = () => {
-      fetch(`${API}/fan`, { method: 'POST' 
-        , headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: !isFanOn })
+      // Tắt auto mode khi người dùng can thiệp thủ công
+      setAuto(false);
+      localStorage.setItem("auto", JSON.stringify(false));
+
+      // Toggle fan state
+      const nextFanStatus = !isFanOn;
+      setIsFanOn(nextFanStatus);
+      
+      // Gửi command đến API
+      fetch(`${API}/fan`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextFanStatus })
       })
-      setIsFanOn(!isFanOn)
-      addNotification('Fan control', !isFanOn ? 'Living room fan turned ON.' : 'Living room fan turned OFF.')
+      
+      // Lưu vào localStorage
+      localStorage.setItem("fan_status", JSON.stringify(nextFanStatus));
+      
+      // Thông báo
+      addNotification('Fan control', nextFanStatus ? 'Living room fan turned ON.' : 'Living room fan turned OFF.')
   }
+
+  const toggleMode = () => {
+    setAuto(!auto);
+    localStorage.setItem("auto", JSON.stringify(!auto));
+  }
+  
 
 
   const receiveSignal = () => {
@@ -197,7 +302,7 @@ const processSecurityData = (data: any) => {
 
   const submitSignal = async (temperature: number, humidity: number) => {
     try {
-      const res = await fetch(`${API}/tempSignal`, {
+      const res = await fetch(`${API}/signal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ temperature, humidity })
@@ -305,8 +410,10 @@ const processSecurityData = (data: any) => {
           <DeviceControlsCard
             isLightOn={isLightOn}
             isFanOn={isFanOn}
+            isChecked={auto}
             onToggleLight={toggleLight}
             onToggleFan={toggleFan}
+            onToggleMode={toggleMode}
           />
           <SignalCenterCard onReceiveSignal={receiveSignal} onSyncTelemetry={updateTelemetry} submitSignal={submitSignal} />
           <TelemetryCard telemetry={telemetry} />

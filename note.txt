@@ -1,0 +1,6 @@
+✅ Tách biệt rõ ràng giữa các tầng
+✅ Frontend độc lập (React SPA)
+✅ Backend API (Express)
+✅ Service layer cho business logic
+✅ Database layer cho data access
+✅ IoT integration (MQTT)

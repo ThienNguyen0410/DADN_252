@@ -46,7 +46,6 @@ CREATE TABLE rooms (
 -- =========================================
 CREATE TABLE devices (
     device_id INT AUTO_INCREMENT PRIMARY KEY,
-    room_id INT NOT NULL,
     device_name VARCHAR(100),
     device_type ENUM('sensor', 'camera', 'fan', 'light', 'door'),
     status BOOLEAN DEFAULT FALSE,
@@ -64,10 +63,9 @@ CREATE TABLE sensor_data (
     device_id INT,
     temperature FLOAT,
     humidity FLOAT,
-    brightness FLOAT,
     recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (device_id) REFERENCES devices(device_id),
-    INDEX idx_device_time (device_id, recorded_at) -- 🔥 tối ưu query
+    INDEX idx_device_time (device_id, recorded_at)
 );
 
 -- =========================================
@@ -152,11 +150,11 @@ CREATE TABLE logs (
 -- =========================================
 CREATE TABLE notifications (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT,
-    message TEXT,
-    status ENUM('sent', 'pending') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    field ENUM('Temperature', 'Humidity'),
+    value FLOAT,
+    boundValue FLOAT,
+    action VARCHAR(255),
+    time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =========================================
@@ -175,3 +173,4 @@ CREATE TABLE face_data (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (person_id) REFERENCES persons(person_id)
 );
+

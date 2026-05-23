@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 type CameraEvent = {
   id: number
@@ -9,13 +10,14 @@ type CameraEvent = {
 }
 
 type TemperatureEvent = {
-  id: number
-  timestamp: string
-  temperature: number
-  threshold: number
+  notification_id: number
+  field: string
+  value: number
+  boundValue: number
   action: string
-  status: 'completed' | 'active'
+  time: string
 }
+
 
 // Mock data
 const mockCameraEvents: CameraEvent[] = [
@@ -42,36 +44,44 @@ const mockCameraEvents: CameraEvent[] = [
   },
 ]
 
-const mockTemperatureEvents: TemperatureEvent[] = [
-  {
-    id: 1,
-    timestamp: '14:32',
-    temperature: 32,
-    threshold: 30,
-    action: 'Bật quạt',
-    status: 'completed',
-  },
-  {
-    id: 2,
-    timestamp: '13:50',
-    temperature: 31.5,
-    threshold: 30,
-    action: 'Bật quạt',
-    status: 'completed',
-  },
-  {
-    id: 3,
-    timestamp: '12:15',
-    temperature: 29,
-    threshold: 30,
-    action: 'Tắt quạt',
-    status: 'completed',
-  },
-]
 
 export default function Notification() {
+  const navigate = useNavigate()
+  const API = "/api";
   const [selectedCamera, setSelectedCamera] = useState<CameraEvent | null>(mockCameraEvents[0])
   const [doorResponse, setDoorResponse] = useState<{ [key: number]: boolean | null }>({})
+  const [notifications, setNotifications] = useState<TemperatureEvent[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchNotifications = async() => {
+      try {
+        const res = await fetch(`${API}/notifications`);
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch notifications");
+        }
+
+        const data = await res.json();
+        setNotifications(data);
+
+        if (data.length >= 10) {
+          await fetch(`${API}/notifications`, {
+            method: "DELETE"
+          })
+        }
+      }
+      catch(err) {
+        console.log(err);
+      }
+      finally {
+        setLoading(false);
+      }
+    }
+
+    fetchNotifications();
+  },[]);
+  
 
   const handleDoorAction = (eventId: number, open: boolean) => {
     setDoorResponse((prev) => ({ ...prev, [eventId]: open }))
@@ -161,29 +171,28 @@ export default function Notification() {
           <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>🌡️ Temperature Notifications</h2>
 
           <ul className="temp-events-list">
-            {mockTemperatureEvents.map((event) => (
-              <li key={event.id} className={`temp-event ${event.status}`}>
+            {notifications.map((event) => (
+              <li key={event.notification_id}>
                 <div className="temp-event-content">
                   <div className="temp-event-header">
                     <span className="temp-value">
-                      {event.temperature}°C
+                      {event.value}°C
                       <span className="temp-threshold">
-                        {event.temperature > event.threshold ? '⬆️' : '⬇️'} ({event.threshold}°C)
+                        {event.value > event.boundValue ? '⬆️' : '⬇️'} ({event.boundValue}°C)
                       </span>
                     </span>
-                    <span className="event-time">{event.timestamp}</span>
+                    <span className="event-time">{event.time}</span>
                   </div>
                   <div className="temp-event-info">
                     <span className="action-label">Action:</span>
                     <strong className="action-text">{event.action}</strong>
-                    <span className="status-badge">{event.status === 'completed' ? 'Completed' : 'Pending'}</span>
                   </div>
                 </div>
               </li>
             ))}
           </ul>
 
-          {mockTemperatureEvents.length === 0 && (
+          {notifications.length === 0 && (
             <p className="empty-state">No temerature notifications.</p>
           )}
         </div>

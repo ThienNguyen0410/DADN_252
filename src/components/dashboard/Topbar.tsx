@@ -8,7 +8,8 @@ type TopbarProps = {
 }
 
 function Topbar({ displayName, onLogout, renderNotifications, notifications = [] }: TopbarProps) {
-  const hasUnreadNotifications = notifications && notifications.length > 0
+  const autoMode = localStorage.getItem("auto")
+  const hasUnreadNotifications = notifications && notifications.length > 0 && autoMode == 'true'
 
   return (
     <header className="topbar glass-card">
