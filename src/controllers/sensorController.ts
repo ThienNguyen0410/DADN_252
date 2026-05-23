@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import AdafruitService from "../services/adaFruitservice.ts";
 import db from "../db.ts";
 
+
 async function ensureSensorDevice(
   feedKey: string,
   deviceName: string
@@ -16,8 +17,8 @@ async function ensureSensorDevice(
   }
 
   const [result]: any = await db.query(
-    `INSERT INTO devices (room_id, device_name, device_type, status, protocol, feed_key)
-     VALUES (1, ?, 'sensor', TRUE, 'Adafruit', ?)`,
+    `INSERT INTO devices (device_name, device_type, status, protocol, feed_key, created_at)
+     VALUES (?, 'sensor', TRUE, 'Adafruit', ?, NOW())`,
     [deviceName, feedKey]
   );
 
@@ -43,6 +44,16 @@ async function saveLatestSensorData(
   );
 }
 
+interface Telemetry {
+    temperature: number | null
+    humidity: number | null
+}
+
+const latesTelemetry: Telemetry = {
+    temperature: null,
+    humidity: null
+}
+
 export const getTemperature = async (req: Request, res: Response) => {
   try {
     const service = AdafruitService.getInstance();
@@ -54,7 +65,12 @@ export const getTemperature = async (req: Request, res: Response) => {
         const tempValue = parseFloat(latest.value);
 
         const deviceId = await ensureSensorDevice("temparature", "Temperature Sensor");
-        await saveLatestSensorData(deviceId, tempValue, null);
+        
+        if (tempValue != latesTelemetry.temperature) {
+          latesTelemetry.temperature = tempValue;
+          await saveLatestSensorData(deviceId, tempValue, latesTelemetry.humidity);
+        }
+
       } catch (dbErr) {
         console.error("DB insert error (temperature):", dbErr);
       }
@@ -78,7 +94,12 @@ export const getHumidity = async (req: Request, res: Response) => {
         const humidValue = parseFloat(latest.value);
 
         const deviceId = await ensureSensorDevice("humidity", "Humidity Sensor");
-        await saveLatestSensorData(deviceId, null, humidValue);
+
+        if (humidValue != latesTelemetry.humidity) {
+          await saveLatestSensorData(deviceId, null, humidValue);
+          latesTelemetry.humidity = humidValue;
+        }
+    
       } catch (dbErr) {
         console.error("DB insert error (humidity):", dbErr);
       }

@@ -41,3 +41,49 @@ npm run api
 
 - Frontend runs on Vite development server.
 - Backend API runs on port 3000.
+
+## Architecture: Layered Architecture (N-Tier Architecture)
+┌─────────────────────────────────────────────┐
+│   Frontend Layer (React + TypeScript)       │
+│   - Pages: login, register, dashboard, etc  │
+│   - Components: UI components               │
+│   - React Router (SPA routing)              │
+└─────────────────┬───────────────────────────┘
+                  │ HTTP/API Calls
+                  ↓
+┌─────────────────────────────────────────────┐
+│   API/Routes Layer (Express.js)             │
+│   - sensorRoutes, login, fan, light, etc   │
+│   - Route handlers & HTTP endpoints        │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ↓
+┌─────────────────────────────────────────────┐
+│   Business Logic Layer (Controllers)        │
+│   - sensorController                        │
+│   - securityController                      │
+│   - Request validation & processing         │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ↓
+┌─────────────────────────────────────────────┐
+│   Service Layer (Services)                  │
+│   - mqttService (MQTT communication)        │
+│   - adaFruitservice (IoT platform)          │
+│   - Business logic & external APIs          │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ↓
+┌─────────────────────────────────────────────┐
+│   Data Access Layer (Database)              │
+│   - db.ts (MySQL connection pool)           │
+│   - Direct database queries                 │
+│   - yolo_home_db (MySQL database)           │
+└─────────────────────────────────────────────┘
+                  │
+                  ↓
+            ┌─────────────┐
+            │   MySQL DB  │
+            │ (yolo_home_ │
+            │     db)     │
+            └─────────────┘
