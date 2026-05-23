@@ -3,7 +3,7 @@ import AdafruitService from "../services/adaFruitservice.ts";
 import db from '../db.ts';
 
 
-const CAMERA_API = 'http://10.128.203.50'; 
+const CAMERA_API = 'http://10.171.45.220'; 
 
 // --- GIAI ĐOẠN 2: QUYẾT ĐỊNH CỦA CHỦ NHÀ ---
 

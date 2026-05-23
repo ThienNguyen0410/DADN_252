@@ -2,11 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 type CameraEvent = {
-  id: number
-  timestamp: string
-  personType: 'stranger' | 'known' | 'unknown'
-  imageUrl: string
+  face_id: number
+  img_url: string
   status: string
+  created_at: string
 }
 
 type TemperatureEvent = {
@@ -19,40 +18,36 @@ type TemperatureEvent = {
 }
 
 
-// Mock data
-const mockCameraEvents: CameraEvent[] = [
-  {
-    id: 1,
-    timestamp: '14:35',
-    personType: 'stranger',
-    imageUrl: 'https://via.placeholder.com/300x250?text=Stranger+Detected',
-    status: '🚨 CẢNH BÁO: NGƯỜI LẠ',
-  },
-  {
-    id: 2,
-    timestamp: '14:22',
-    personType: 'known',
-    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRW_KIAPN6vtn6vN5YhBFBVQmQe4B57qm0050n3wnzw6XCYmn1ebBvtdAF3brUXoLCApdznVN8p3GZiR2bPn9ZqivoQg-vIj2DcmTvjtfE&s',
-    status: '✅ XÁC NHẬN: NGƯỜI QUEN',
-  },
-  {
-    id: 3,
-    timestamp: '13:45',
-    personType: 'unknown',
-    imageUrl: 'https://via.placeholder.com/300x250?text=Unknown+Face',
-    status: '🔍 Không phát hiện khuôn mặt',
-  },
-]
+// // Mock data
+// const mockCameraEvents: CameraEvent[] = [
+//   {
+//     id: 1,
+//     timestamp: '14:35',
+//     imageUrl: 'https://via.placeholder.com/300x250?text=Stranger+Detected',
+//     status: '🚨 CẢNH BÁO: NGƯỜI LẠ',
+//   },
+//   {
+//     id: 2,
+//     timestamp: '14:22',
+//     imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRW_KIAPN6vtn6vN5YhBFBVQmQe4B57qm0050n3wnzw6XCYmn1ebBvtdAF3brUXoLCApdznVN8p3GZiR2bPn9ZqivoQg-vIj2DcmTvjtfE&s',
+//     status: '✅ XÁC NHẬN: NGƯỜI QUEN',
+//   },
+//   {
+//     id: 3,
+//     timestamp: '13:45',
+//     imageUrl: 'https://via.placeholder.com/300x250?text=Unknown+Face',
+//     status: '🔍 Không phát hiện khuôn mặt',
+//   },
+// ]
 
 
 export default function Notification() {
   const navigate = useNavigate()
   const API = "/api";
-  const [selectedCamera, setSelectedCamera] = useState<CameraEvent | null>(mockCameraEvents[0])
-  const [doorResponse, setDoorResponse] = useState<{ [key: number]: boolean | null }>({})
+  const [selectedCamera, setSelectedCamera] = useState<CameraEvent | null>()
   const [notifications, setNotifications] = useState<TemperatureEvent[]>([])
   const [loading, setLoading] = useState(true)
-
+  const [cameraEvent, setcameraEvent] = useState<CameraEvent[]> ([])
   useEffect(() => {
     const fetchNotifications = async() => {
       try {
@@ -82,14 +77,31 @@ export default function Notification() {
     fetchNotifications();
   },[]);
   
+  useEffect(() => {
+    const fetchCamera = async() => {
+      try {
+        const res = await fetch(`${API}/camera`)
+        if (!res.ok) {
+          throw new Error("Failed to fetch data")
+        }
+        const data = await res.json()
+        setcameraEvent(data)
 
-  const handleDoorAction = (eventId: number, open: boolean) => {
-    setDoorResponse((prev) => ({ ...prev, [eventId]: open }))
-    // Reset sau 3 giây
-    setTimeout(() => {
-      setDoorResponse((prev) => ({ ...prev, [eventId]: null }))
-    }, 3000)
-  }
+        if (data.length >= 5) {
+          await fetch(`${API}/camera`, {
+            method: "DELETE"
+          })
+        }
+      }
+      catch(err){
+        console.log(err);
+      }
+      finally {
+        setLoading(false)
+      }
+    }
+    fetchCamera()
+  },[])
 
   return (
     <div className="notification-page">
@@ -103,7 +115,7 @@ export default function Notification() {
             <div className="camera-preview">
               {selectedCamera && (
                 <>
-                  <img src={selectedCamera.imageUrl} alt="Camera feed" />
+                  <img src={selectedCamera.img_url} alt="Camera feed" />
                   <div className="camera-status-badge">{selectedCamera.status}</div>
                 </>
               )}
@@ -113,53 +125,19 @@ export default function Notification() {
             <div className="camera-events">
               <h4 style={{ margin: '0 0 0.8rem', color: 'var(--text-muted)' }}>History</h4>
               <ul className="event-timeline">
-                {mockCameraEvents.map((event) => (
+                {cameraEvent.map((event) => (
                   <li
-                    key={event.id}
-                    className={`event-item ${selectedCamera?.id === event.id ? 'active' : ''}`}
+                    key={event.face_id}
+                    className={`event-item ${selectedCamera?.face_id === event.face_id ? 'active' : ''}`}
                     onClick={() => setSelectedCamera(event)}
                   >
                     <div className="event-header">
-                      <span className="event-time">{event.timestamp}</span>
-                      <span
-                        className={`person-badge ${event.personType}`}
-                      >
-                        {event.personType === 'stranger' && 'Stranger'}
-                        {event.personType === 'known' && 'Acquaintance'}
-                        {event.personType === 'unknown' && 'Undefined'}
-                      </span>
+                      <span style={{ fontWeight: 'bold' }}>{event.created_at}</span>
+                      <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{event.status}</span>
                     </div>
                   </li>
                 ))}
-              </ul>
-
-              {/* Door Control */}
-              {selectedCamera && selectedCamera.personType === 'stranger' && (
-                <div className="door-control">
-                  <p style={{ margin: '1rem 0 0.8rem', fontSize: '0.95rem', fontWeight: 600 }}>
-                    Request: Open door?
-                  </p>
-                  <div className="door-buttons">
-                    <button
-                      className={`btn door-btn ${doorResponse[selectedCamera.id] === true ? 'accepted' : ''}`}
-                      onClick={() => handleDoorAction(selectedCamera.id, true)}
-                    >
-                      ✓ Yes
-                    </button>
-                    <button
-                      className={`btn door-btn ${doorResponse[selectedCamera.id] === false ? 'rejected' : ''}`}
-                      onClick={() => handleDoorAction(selectedCamera.id, false)}
-                    >
-                      ✕ No
-                    </button>
-                  </div>
-                  {doorResponse[selectedCamera.id] !== null && (
-                    <div className="response-message">
-                      {doorResponse[selectedCamera.id] ? 'Open door request was sent' : 'Declare to open door'}
-                    </div>
-                  )}
-                </div>
-              )}
+              </ul>            
             </div>
           </div>
         </div>

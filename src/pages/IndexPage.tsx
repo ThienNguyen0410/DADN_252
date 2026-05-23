@@ -352,6 +352,15 @@ const processSecurityData = (data: any) => {
         setIsStranger(false);
         setCameraImage(null);
         addNotification('Security', 'Đã cập nhật danh sách người quen.');
+
+      const status = 'Opened door'
+      await fetch(`${API}/camera`, {
+        method : 'POST',
+        headers : {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          status
+        })
+      })
       }
     } catch (error) {
       setCameraStatus('Lỗi kết nối!');
@@ -365,6 +374,15 @@ const processSecurityData = (data: any) => {
       setIsStranger(false);
       setCameraImage(null);
       addNotification('Security', 'Đã xua đuổi người lạ.');
+
+      const status = 'Rejected open door'
+      await fetch(`${API}/camera`, {
+        method : 'POST',
+        headers : {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          status
+        })
+      })
     } catch (error) {
       setCameraStatus('Lỗi kết nối!');
     }
@@ -378,6 +396,15 @@ const processSecurityData = (data: any) => {
         setCameraStatus('Đã mở cửa (Không lưu mặt).');
         setIsStranger(false);
       }
+
+      const status = 'Opened door with stranger'
+      await fetch(`${API}/camera`, {
+        method : 'POST',
+        headers : {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          status
+        })
+      })
     } catch (error) {
       setCameraStatus('Lỗi kết nối!');
     }

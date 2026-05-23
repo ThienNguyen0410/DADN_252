@@ -168,9 +168,8 @@ CREATE TABLE persons (
 
 CREATE TABLE face_data (
     face_id INT AUTO_INCREMENT PRIMARY KEY,
-    person_id INT,
-    encoding TEXT,
+    img_url VARCHAR(255),
+    status VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (person_id) REFERENCES persons(person_id)
 );
 
