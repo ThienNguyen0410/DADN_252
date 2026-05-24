@@ -34,6 +34,8 @@ function Login() {
 			}
 
 			setStatus('Secure tunnel established')
+			localStorage.setItem("isLogin", JSON.stringify(true))
+			localStorage.setItem("username", username)
 			window.location.href = '/'
 
 		} catch (err) {

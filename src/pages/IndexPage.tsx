@@ -5,6 +5,7 @@ import SecurityCameraCard from '../components/dashboard/SecurityCameraCard.tsx'
 import SignalCenterCard from '../components/dashboard/SignalCenterCard'
 import TelemetryCard from '../components/dashboard/TelemetryCard'
 import Topbar from '../components/dashboard/Topbar'
+import Login from './login.tsx'
 import { signalTemplates } from '../data/signalTemplates'
 import type { SignalNotification, Telemetry } from '../types/dashboard'
 import { getCurrentTime } from '../utils/time'
@@ -13,7 +14,7 @@ function IndexPage() {
 const API = '/api';
 const [isProcessing, setIsProcessing] = useState(false);
 
-  const [displayName] = useState('thien.iot')
+  const [displayName] = useState(localStorage.getItem("username"))
   const [isLightOn, setIsLightOn] = useState(false)
   const [isFanOn, setIsFanOn] = useState(() => {
     const saved = localStorage.getItem('fan_status')
@@ -423,8 +424,11 @@ const processSecurityData = (data: any) => {
     setIsStranger(false)
     window.location.href = '/login'
   }
-
+  
+  let isLogged:boolean = localStorage.getItem("isLogin") == 'true'
   return (
+<>
+    {!isLogged? (<Login/>) : (  
     <main className="app-shell">
       <div className="bg-orb bg-orb-a" />
       <div className="bg-orb bg-orb-b" />
@@ -457,6 +461,9 @@ const processSecurityData = (data: any) => {
         </div>
       </section>
     </main>
+    )
+    }
+  </>
   )
 }
 
