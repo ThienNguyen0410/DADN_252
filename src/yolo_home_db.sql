@@ -99,3 +99,26 @@ CREATE TABLE face_data (
     status VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+SELECT * FROM users;
+TRUNCATE TABLE notifications;
+DROP DATABASE yolo_home_db;
+SELECT* FROM sensor_data;
+DELETE  FROM sensor_data;
+
+SELECT *
+FROM rules r
+LEFT JOIN rule_conditions rc
+    ON r.rule_id = rc.rule_id
+LEFT JOIN rule_actions ra
+    ON r.rule_id = ra.rule_id;
+    
+SELECT * FROM sensor_data
+WHERE temperature is not null and humidity is not null;
+
+SELECT* FROM notifications;
+
+ SELECT field, value
+            FROM rule_conditions
+            WHERE field IN ('Temperature', 'Humidity')
+            ORDER BY condition_id DESC

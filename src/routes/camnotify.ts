@@ -56,6 +56,7 @@ router.post("/camera", async(req, res) => {
         fs.writeFileSync(savePath, filename)
         const imgPath = `/face/${filename}`
 
+        console.log(imgPath)
         await conn.query(`INSERT INTO face_data(image_url, status, created_at) 
                             VALUES(?,?,NOW())`,[filename, status])
         res.status(200).json({

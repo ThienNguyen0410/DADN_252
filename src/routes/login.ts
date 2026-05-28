@@ -22,4 +22,39 @@ router.post('/login', async (req, res) => {
     }
 });
 
+router.put('/put/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        if (!username?.trim() || !password?.trim()) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Username and new password are required'
+            });
+        }
+
+        const [result] = await db.query(
+            'UPDATE users SET password = ? WHERE username = ?',
+            [password.trim(), username.trim()]
+        ) as any[];
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Username not found'
+            });
+        }
+
+        return res.json({
+            status: 'success',
+            message: 'Password updated successfully'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 'error',
+            message: 'Internal server error'
+        });
+    }
+});
+
 export default router;
