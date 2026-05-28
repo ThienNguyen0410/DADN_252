@@ -12,7 +12,10 @@ import { getCurrentTime } from '../utils/time'
 
 function IndexPage() {
 const API = '/api';
+const CAMERA_API = 'http://10.171.45.220';
 const [isProcessing, setIsProcessing] = useState(false);
+const lastAutoApproveIdRef = useRef<number | null>(null)
+const autoApproveInFlightRef = useRef(false)
 
   const [displayName] = useState(localStorage.getItem("username"))
   const [isLightOn, setIsLightOn] = useState(false)
@@ -173,12 +176,10 @@ const processSecurityData = (data: any) => {
         const res = await fetch(`${API}/security/check`);
         const data = await res.json();
         
-        if (data.triggerDetected) { // Nếu Backend báo có trigger
+        if (data.triggerDetected) { 
           setIsProcessing(true);
-          // Cập nhật giao diện từ dữ liệu Backend trả về
           processSecurityData(data);
           
-          // Sau 10 giây cho phép nhận trigger mới
           setTimeout(() => setIsProcessing(false), 5000);
         }
       } catch (err) {
@@ -343,6 +344,73 @@ const processSecurityData = (data: any) => {
       setIsProcessing(false);
     }
   };
+
+  // Poll camera status continuously and auto-save any new recognized face.
+  useEffect(() => {
+    let isMounted = true
+
+    const pollAutoApprove = async () => {
+      if (autoApproveInFlightRef.current) return
+
+      autoApproveInFlightRef.current = true
+      try {
+        const res = await fetch(`${CAMERA_API}/status`, {
+          cache: 'no-store'
+        })
+
+        if (!res.ok) {
+          return
+        }
+
+        const data = await res.json()
+        const id = Number(data?.id ?? 0)
+
+        if (!Number.isFinite(id) || id <= 0) {
+          lastAutoApproveIdRef.current = null
+          return
+        }
+
+        if (lastAutoApproveIdRef.current === id) {
+          return
+        }
+
+        const saveRes = await fetch(`${API}/camera`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: `Auto ${id}`
+          })
+        })
+
+        if (!saveRes.ok) {
+          throw new Error('Failed to save auto camera snapshot')
+        }
+
+        const savedData = await saveRes.json()
+        lastAutoApproveIdRef.current = id
+
+        if (!isMounted) return
+
+        setCameraImage(savedData.image ? `${savedData.image}?t=${Date.now()}` : null)
+        setCameraStatus(`🤖 Tự động lưu ảnh #${id}`)
+        setIsStranger(false)
+        addNotification('Security', `Tự động lưu ảnh mới #${id}`)
+      } catch (err) {
+        console.log('AutoApprove polling error:', err)
+      } finally {
+        autoApproveInFlightRef.current = false
+      }
+    }
+
+    pollAutoApprove()
+    const timer = window.setInterval(pollAutoApprove, 3000)
+
+    return () => {
+      isMounted = false
+      window.clearInterval(timer)
+      autoApproveInFlightRef.current = false
+    }
+  }, [])
 
     const approveStranger = async () => {
     try {
