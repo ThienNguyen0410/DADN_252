@@ -352,7 +352,7 @@ const processSecurityData = (data: any) => {
         setCameraStatus('Đã phê duyệt. Chào mừng!');
         setIsStranger(false);
         setCameraImage(null);
-        addNotification('Security', 'Đã cập nhật danh sách người quen.');
+        addNotification('Security', 'Update detailed');
 
       const status = 'Opened door'
       await fetch(`${API}/camera`, {
@@ -370,20 +370,23 @@ const processSecurityData = (data: any) => {
 
   const rejectStranger = async () => {
     try {
-      await fetch(`${API}/security/reject`, { method: 'POST' });
-      setCameraStatus('Đã từ chối truy cập.');
-      setIsStranger(false);
-      setCameraImage(null);
-      addNotification('Security', 'Đã xua đuổi người lạ.');
-
-      const status = 'Rejected open door'
-      await fetch(`${API}/camera`, {
+      const status = 'Door rejected'
+      const logRes = await fetch(`${API}/camera`, {
         method : 'POST',
         headers : {'Content-Type': 'application/json'},
         body: JSON.stringify({
           status
         })
       })
+      if (!logRes.ok) {
+        throw new Error('Failed to save camera event')
+      }
+
+      await fetch(`${API}/security/reject`, { method: 'POST' });
+      setCameraStatus('Đã từ chối truy cập.');
+      setIsStranger(false);
+      setCameraImage(null);
+      addNotification('Security', 'Đã xua đuổi người lạ.');
     } catch (error) {
       setCameraStatus('Lỗi kết nối!');
     }
@@ -392,20 +395,25 @@ const processSecurityData = (data: any) => {
   const allowStranger = async () => {
     try {
       setCameraStatus('Đang mở cửa tạm thời...');
-      const res = await fetch(`${API}/security/allow`, { method: 'POST' });
-      if (res.ok) {
-        setCameraStatus('Đã mở cửa (Không lưu mặt).');
-        setIsStranger(false);
-      }
 
-      const status = 'Opened door with stranger'
-      await fetch(`${API}/camera`, {
+      const status = 'Door opened temp'
+      const logRes = await fetch(`${API}/camera`, {
         method : 'POST',
         headers : {'Content-Type': 'application/json'},
         body: JSON.stringify({
           status
         })
       })
+      if (!logRes.ok) {
+        throw new Error('Failed to save camera event')
+      }
+
+      const res = await fetch(`${API}/security/allow`, { method: 'POST' });
+      if (res.ok) {
+        setCameraStatus('Đã mở cửa (Không lưu mặt).');
+        setIsStranger(false);
+        addNotification('Security', 'Update detailed');
+      }
     } catch (error) {
       setCameraStatus('Lỗi kết nối!');
     }

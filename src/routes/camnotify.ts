@@ -13,7 +13,7 @@ router.get("/camera" ,async(req, res) => {
         conn = await db.getConnection()
         const [result] = await conn.query(`SELECT * FROM face_data
                                            ORDER BY face_id ASC
-                                           LIMIT 1 `);
+                                            `);
         res.status(200).json(result)
     }
 
@@ -53,14 +53,15 @@ router.post("/camera", async(req, res) => {
             FACE_FOLDER,
             filename
             )
-        fs.writeFileSync(savePath, filename)
-        const imgPath = `/face/${filename}`
+        fs.mkdirSync(FACE_FOLDER, { recursive: true })
+        fs.writeFileSync(savePath, buffer)
+        const imgPath = `/api/camera/${filename}`
 
         console.log(imgPath)
-        await conn.query(`INSERT INTO face_data(image_url, status, created_at) 
-                            VALUES(?,?,NOW())`,[filename, status])
+        await conn.query(`INSERT INTO face_data(img_url, status, created_at) 
+                            VALUES(?,?,NOW())`,[imgPath, status])
         res.status(200).json({
-            message: "Internal server error",
+            message: "Saved image successfully",
             image: imgPath
         })
 

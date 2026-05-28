@@ -27,6 +27,7 @@ app.use('/api', security);
 app.use('/api', register);
 app.use('/api', notifications)
 app.use('/api', boundary)
+app.use('/api', camera)
 app.use(
   '/api/camera',
   express.static(

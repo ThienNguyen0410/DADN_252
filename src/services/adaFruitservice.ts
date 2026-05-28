@@ -57,7 +57,7 @@ class AdafruitService {
 
   async sendResult(resultValue: number | string) {
     // FIX: Sử dụng đúng endpoint /data
-    const url = `${this.BASE_URL}/acquaintance/data`;
+    const url = `${this.BASE_URL}/cam-result/data`;
     const res = await fetch(url, {
       method: 'POST',
       headers: this.getHeaders(),
