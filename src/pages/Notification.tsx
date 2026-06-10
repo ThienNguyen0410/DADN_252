@@ -18,28 +18,6 @@ type TemperatureEvent = {
 }
 
 
-// // Mock data
-// const mockCameraEvents: CameraEvent[] = [
-//   {
-//     id: 1,
-//     timestamp: '14:35',
-//     imageUrl: 'https://via.placeholder.com/300x250?text=Stranger+Detected',
-//     status: '🚨 CẢNH BÁO: NGƯỜI LẠ',
-//   },
-//   {
-//     id: 2,
-//     timestamp: '14:22',
-//     imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRW_KIAPN6vtn6vN5YhBFBVQmQe4B57qm0050n3wnzw6XCYmn1ebBvtdAF3brUXoLCApdznVN8p3GZiR2bPn9ZqivoQg-vIj2DcmTvjtfE&s',
-//     status: '✅ XÁC NHẬN: NGƯỜI QUEN',
-//   },
-//   {
-//     id: 3,
-//     timestamp: '13:45',
-//     imageUrl: 'https://via.placeholder.com/300x250?text=Unknown+Face',
-//     status: '🔍 Không phát hiện khuôn mặt',
-//   },
-// ]
-
 
 export default function Notification() {
   const navigate = useNavigate()

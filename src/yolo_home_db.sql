@@ -105,6 +105,7 @@ TRUNCATE TABLE notifications;
 DROP DATABASE yolo_home_db;
 SELECT* FROM sensor_data;
 DELETE  FROM sensor_data;
+SELECT * from face_data;
 
 SELECT *
 FROM rules r
@@ -121,4 +122,6 @@ SELECT* FROM notifications;
  SELECT field, value
             FROM rule_conditions
             WHERE field IN ('Temperature', 'Humidity')
-            ORDER BY condition_id DESC
+            ORDER BY condition_id DESC;
+            
+DROP DATABASE yolo_home_db;

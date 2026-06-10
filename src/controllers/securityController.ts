@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import AdafruitService from "../services/adaFruitservice.ts";
 
 
-const CAMERA_API = 'http://10.171.45.220'; 
+const CAMERA_API = 'http://10.120.253.220'; 
 
 // --- GIAI ĐOẠN 2: QUYẾT ĐỊNH CỦA CHỦ NHÀ ---
 

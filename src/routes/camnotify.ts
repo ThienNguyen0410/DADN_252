@@ -3,7 +3,7 @@ import db from '../db.ts'
 import path from 'path'
 import fs from 'fs'
 
-const CAMERA_API = 'http://10.171.45.220'
+const CAMERA_API = 'http://10.120.253.220'
 const router = express.Router()
 const FACE_FOLDER = path.join(process.cwd(), "src","face")
 
