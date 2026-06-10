@@ -1,9 +1,8 @@
 import type { Request, Response } from "express";
 import AdafruitService from "../services/adaFruitservice.ts";
-import db from '../db.ts';
 
 
-const CAMERA_API = 'http://10.128.203.50'; 
+const CAMERA_API = 'http://10.120.253.220'; 
 
 // --- GIAI ĐOẠN 2: QUYẾT ĐỊNH CỦA CHỦ NHÀ ---
 
@@ -133,12 +132,7 @@ export const handleSecurityFlow = async (req: Request, res: Response) => {
 
         if (aiGuess === 1) {
           recognitionType = "Acquaintance";
-          const [rows]: any = await db.query('SELECT full_name FROM members WHERE face_id = ?', [aiGuess]);
-          if (rows.length > 0) {
-            identifiedName = rows[0].full_name;
-          } else {
-            identifiedName = "Người quen (Chưa đặt tên)";
-          }
+          identifiedName = "Người quen (Chưa đặt tên)";
         } 
         else if (aiGuess === 2) {
           recognitionType = "Stranger";
@@ -147,16 +141,6 @@ export const handleSecurityFlow = async (req: Request, res: Response) => {
         else {
           recognitionType = "No_Face";
           identifiedName = "Kiểm tra an ninh (Không có người)";
-        }
-
-        try {
-          await db.query(
-            'INSERT INTO access_history (member_name, image_url, recognition_type) VALUES (?, ?, ?)',
-            [identifiedName, `${CAMERA_API}/latest.jpg`, recognitionType]
-          );
-          console.log(`===> Đã lưu lịch sử: ${identifiedName}`);
-        } catch (dbErr) {
-          console.error("!!! LỖI LƯU DATABASE:", dbErr);
         }
 
         // GỬI LÊN ADAFRUIT (Chỉ khi phân tích xong mới gửi)

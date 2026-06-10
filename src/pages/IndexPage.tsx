@@ -5,15 +5,19 @@ import SecurityCameraCard from '../components/dashboard/SecurityCameraCard.tsx'
 import SignalCenterCard from '../components/dashboard/SignalCenterCard'
 import TelemetryCard from '../components/dashboard/TelemetryCard'
 import Topbar from '../components/dashboard/Topbar'
+import Login from './login.tsx'
 import { signalTemplates } from '../data/signalTemplates'
 import type { SignalNotification, Telemetry } from '../types/dashboard'
 import { getCurrentTime } from '../utils/time'
 
 function IndexPage() {
 const API = '/api';
+const CAMERA_API = 'http://10.120.253.220';
 const [isProcessing, setIsProcessing] = useState(false);
+const lastAutoApproveIdRef = useRef<number | null>(null)
+const autoApproveInFlightRef = useRef(false)
 
-  const [displayName] = useState('thien.iot')
+  const [displayName] = useState(localStorage.getItem("username"))
   const [isLightOn, setIsLightOn] = useState(false)
   const [isFanOn, setIsFanOn] = useState(() => {
     const saved = localStorage.getItem('fan_status')
@@ -71,9 +75,9 @@ const [isProcessing, setIsProcessing] = useState(false);
 
   }, []);
 
-  // --- CÁC STATE MỚI CHO CAMERA ---
+  // --- NEW CAMERA STATES ---
   const [cameraImage, setCameraImage] = useState<string | null>(null)
-  const [cameraStatus, setCameraStatus] = useState('Sẵn sàng hoạt động')
+  const [cameraStatus, setCameraStatus] = useState('Ready to operate')
   const [isStranger, setIsStranger] = useState(false)
 
 const processSecurityData = (data: any) => {
@@ -81,18 +85,18 @@ const processSecurityData = (data: any) => {
     const recognitionResult = Number(data.recognition);
 
     if (recognitionResult === 2) {
-      setCameraImage(`${data.image}?t=${Date.now()}`); // Chỉ hiện ảnh khi là người lạ
-      setCameraStatus('🚨 CẢNH BÁO: NGƯỜI LẠ!');
+      setCameraImage(`${data.image}?t=${Date.now()}`); // Show image for strangers only
+      setCameraStatus('🚨 WARNING: STRANGER!');
       setIsStranger(true);
     } else if (recognitionResult === 1) {
-      setCameraImage(`${data.image}?t=${Date.now()}`); // Hiện ảnh khi là người quen
-      setCameraStatus('✅ XÁC NHẬN: NGƯỜI QUEN');
+      setCameraImage(`${data.image}?t=${Date.now()}`); // Show image for known persons
+      setCameraStatus('✅ CONFIRMED: KNOWN PERSON');
       setIsStranger(false);
     } else {
-      // FIX: Nếu không thấy mặt, ta xóa luôn ảnh cũ để tránh nhầm lẫn
+      // FIX: If no face detected, clear old image to avoid confusion
       setCameraImage(null); 
       setCameraImage(`${data.image}?t=${Date.now()}`);
-      setCameraStatus('🔍 Không phát hiện khuôn mặt rõ ràng.');
+      setCameraStatus('🔍 No clear face detected.');
       setIsStranger(false);
     }
     return true;
@@ -117,12 +121,12 @@ const processSecurityData = (data: any) => {
   useEffect(() => {
     let timeout: number;
 
-    // Nếu auto mode được bật
+    // If auto mode is enabled
     if (auto) {
       console.log("Auto mode ON - Auto controlling fan");
       
       if (telemetry.temperature > boundtelemetry.temperature) {
-        // Nhiệt độ cao -> cần bật quạt
+        // High temperature -> need to turn on fan
         if (!isFanOn) {
           console.log("Temperature high, turning ON fan");
           setIsFanOn(true);
@@ -136,7 +140,7 @@ const processSecurityData = (data: any) => {
           sendNotifications("Temperature", telemetry.temperature, boundtelemetry.temperature, "AUTO TURN ON FAN");
         }
       } else {
-        // Nhiệt độ bình thường -> cần tắt quạt
+        // Normal temperature -> need to turn off fan
         if (isFanOn) {
           timeout = window.setTimeout(() => {
             console.log("Temperature normal, turning OFF fan");
@@ -149,7 +153,7 @@ const processSecurityData = (data: any) => {
             })
             localStorage.setItem("fan_status", JSON.stringify(false));
             sendNotifications("Temperature", telemetry.temperature, boundtelemetry.temperature, "AUTO TURN OFF FAN");
-          }, 1000);
+          }, 5000);
         }
       }
     } else {
@@ -168,25 +172,23 @@ const processSecurityData = (data: any) => {
   const checkTrigger = async () => {
     if (!isProcessing) {
       try {
-        // Hỏi Server xem có ai trigger không
+        // Ask server if there's a trigger
         const res = await fetch(`${API}/security/check`);
         const data = await res.json();
         
-        if (data.triggerDetected) { // Nếu Backend báo có trigger
+        if (data.triggerDetected) { 
           setIsProcessing(true);
-          // Cập nhật giao diện từ dữ liệu Backend trả về
           processSecurityData(data);
           
-          // Sau 10 giây cho phép nhận trigger mới
           setTimeout(() => setIsProcessing(false), 5000);
         }
       } catch (err) {
-        console.log("Đang đợi tín hiệu từ Adafruit...");
+        console.log("Waiting for signal from Adafruit...");
       }
     }
   };
 
-  const timer = setInterval(checkTrigger, 3000); // Check mỗi 3 giây
+  const timer = setInterval(checkTrigger, 3000); // Check every 3 seconds
   return () => clearInterval(timer);
 }, [isProcessing]);
 
@@ -234,7 +236,7 @@ const processSecurityData = (data: any) => {
     })
     //addNotification('Telemetry synced', 'Device metrics updated')
   } catch (err) {
-    console.error('Telemetry fetch error:', err)  // ← Thêm log chi tiết
+    console.error('Telemetry fetch error:', err)  // ← Add detailed log
     addNotification('Telemetry error', err instanceof Error ? err.message : 'Failed to fetch data')
   }
 }
@@ -265,7 +267,7 @@ const processSecurityData = (data: any) => {
   }
 
   const toggleFan = () => {
-      // Tắt auto mode khi người dùng can thiệp thủ công
+      // Turn off auto mode when user manually intervenes
       setAuto(false);
       localStorage.setItem("auto", JSON.stringify(false));
 
@@ -273,17 +275,17 @@ const processSecurityData = (data: any) => {
       const nextFanStatus = !isFanOn;
       setIsFanOn(nextFanStatus);
       
-      // Gửi command đến API
+      // Send command to API
       fetch(`${API}/fan`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextFanStatus })
       })
       
-      // Lưu vào localStorage
+      // Save to localStorage
       localStorage.setItem("fan_status", JSON.stringify(nextFanStatus));
       
-      // Thông báo
+      // Notification
       addNotification('Fan control', nextFanStatus ? 'Living room fan turned ON.' : 'Living room fan turned OFF.')
   }
 
@@ -308,6 +310,7 @@ const processSecurityData = (data: any) => {
         body: JSON.stringify({ temperature, humidity })
       })
       if (res.ok) {
+        localStorage.setItem("auto",JSON.stringify(false))
         addNotification('Signal submitted', `Temperature: ${temperature}°C, Humidity: ${humidity}%`)
         const newbound = {
           temperature,
@@ -328,16 +331,16 @@ const processSecurityData = (data: any) => {
     if (isProcessing) return;
     
     setIsProcessing(true);
-    setCameraStatus('Đang yêu cầu Camera chụp ảnh...');
+    setCameraStatus('Requesting camera to capture image...');
     try {
-      const res = await fetch(`${API}/security/check?manual=true`); // Gọi cùng 1 API để Backend điều phối
+      const res = await fetch(`${API}/security/check?manual=true`); // Call the same API for backend coordination
       const data = await res.json();
       
       const hasResult = processSecurityData(data);
-      if (!hasResult) setCameraStatus('Camera không phản hồi.');
+      if (!hasResult) setCameraStatus('Camera did not respond.');
       
     } catch (error) {
-      setCameraStatus('Lỗi kết nối Server!');
+      setCameraStatus('Server connection error!');
     } finally {
       setIsProcessing(false);
     }
@@ -345,41 +348,79 @@ const processSecurityData = (data: any) => {
 
     const approveStranger = async () => {
     try {
-      setCameraStatus('Đang xử lý phê duyệt...');
+      localStorage.setItem("auto", JSON.stringify(true))
+      setCameraStatus('Processing approval...');
       const res = await fetch(`${API}/security/approve`, { method: 'POST' });
       if (res.ok) {
-        setCameraStatus('Đã phê duyệt. Chào mừng!');
+        setCameraStatus('Approved. Welcome!');
         setIsStranger(false);
         setCameraImage(null);
-        addNotification('Security', 'Đã cập nhật danh sách người quen.');
+        addNotification('Security', 'Update detailed');
+
+      const status = 'Opened door'
+      await fetch(`${API}/camera`, {
+        method : 'POST',
+        headers : {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          status
+        })
+      })
       }
     } catch (error) {
-      setCameraStatus('Lỗi kết nối!');
+      setCameraStatus('Connection error!');
     }
   };
 
   const rejectStranger = async () => {
     try {
+      localStorage.setItem("auto", JSON.stringify(true))
+      const status = 'Door rejected'
+      const logRes = await fetch(`${API}/camera`, {
+        method : 'POST',
+        headers : {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          status
+        })
+      })
+      if (!logRes.ok) {
+        throw new Error('Failed to save camera event')
+      }
+
       await fetch(`${API}/security/reject`, { method: 'POST' });
-      setCameraStatus('Đã từ chối truy cập.');
+      setCameraStatus('Access denied.');
       setIsStranger(false);
       setCameraImage(null);
-      addNotification('Security', 'Đã xua đuổi người lạ.');
+      addNotification('Security', 'Intruder rejected.');
     } catch (error) {
-      setCameraStatus('Lỗi kết nối!');
+      setCameraStatus('Connection error!');
     }
   };
 
   const allowStranger = async () => {
     try {
-      setCameraStatus('Đang mở cửa tạm thời...');
+      localStorage.setItem("auto", JSON.stringify(true))
+      setCameraStatus('Opening temp...');
+
+      const status = 'Door opened temp'
+      const logRes = await fetch(`${API}/camera`, {
+        method : 'POST',
+        headers : {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          status
+        })
+      })
+      if (!logRes.ok) {
+        throw new Error('Failed to save camera event')
+      }
+
       const res = await fetch(`${API}/security/allow`, { method: 'POST' });
       if (res.ok) {
-        setCameraStatus('Đã mở cửa (Không lưu mặt).');
+        setCameraStatus('Door opened (Face not saved).');
         setIsStranger(false);
+        addNotification('Security', 'Update detailed');
       }
     } catch (error) {
-      setCameraStatus('Lỗi kết nối!');
+      setCameraStatus('Connection error!');
     }
   };
 
@@ -396,8 +437,11 @@ const processSecurityData = (data: any) => {
     setIsStranger(false)
     window.location.href = '/login'
   }
-
+  
+  let isLogged:boolean = localStorage.getItem("isLogin") == 'true'
   return (
+<>
+    {!isLogged? (<Login/>) : (  
     <main className="app-shell">
       <div className="bg-orb bg-orb-a" />
       <div className="bg-orb bg-orb-b" />
@@ -430,6 +474,9 @@ const processSecurityData = (data: any) => {
         </div>
       </section>
     </main>
+    )
+    }
+  </>
   )
 }
 

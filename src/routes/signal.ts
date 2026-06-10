@@ -9,8 +9,19 @@ const router = express.Router();
 router.post('/signal', async (req, res) => {
     let conn;
     try {
-        conn = await db.getConnection();
         const { temperature, humidity } = req.body;
+        const aioKey = process.env.VITE_AIO_KEY;
+        await fetch("https://io.adafruit.com/api/v2/KenElem/feeds/tem-upper/data", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-AIO-Key': aioKey as string
+            },
+            body: JSON.stringify({ value :temperature}),
+        });
+
+
+        conn = await db.getConnection();
 
         const [rule] = await conn.query<ResultSetHeader>(`INSERT INTO rules(rule_name, event_type, is_active)
                         VALUES (?,?,?)`,["","OverBound",true]);

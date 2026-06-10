@@ -45,7 +45,7 @@ function Register() {
   const handleSubmit = async (event: any) => {
     event.preventDefault()
 
-    if (!username.trim() || !password.trim() || !confirmPassword.trim() || !avatarUrl.trim()) {
+    if (!username.trim() || !password.trim() || !confirmPassword.trim()) {
       setError('Vui lòng điền đầy đủ thông tin cá nhân')
       setStatus('Input required')
       return
@@ -74,8 +74,6 @@ function Register() {
         body: JSON.stringify({
           username,
           password,
-          avatarUrl,
-          familyMembers,
         }),
       })
 
@@ -175,83 +173,8 @@ function Register() {
               placeholder="Confirm password"
               autoComplete="new-password"
             />
-
-            <label htmlFor="avatarUrl">Face Image URL</label>
-            <input
-              id="avatarUrl"
-              type="url"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://example.com/your-face.jpg"
-              autoComplete="off"
-            />
+           
           </div>
-
-          {/* Family Members */}
-          <div className="form-section">
-            <h3 className="section-title">Family Members ({familyMembers.length})</h3>
-
-            <label htmlFor="memberName">Member Name</label>
-            <input
-              id="memberName"
-              type="text"
-              value={newMember.name}
-              onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-              placeholder="Enter name"
-            />
-
-            <label htmlFor="memberRelation">Relation</label>
-            <select
-              id="memberRelation"
-              value={newMember.relation}
-              onChange={(e) => setNewMember({ ...newMember, relation: e.target.value })}
-              className="form-select"
-            >
-              {RELATIONS.map((rel) => (
-                <option key={rel} value={rel}>
-                  {rel}
-                </option>
-              ))}
-            </select>
-
-            <label htmlFor="memberImageUrl">Member Image URL</label>
-            <input
-              id="memberImageUrl"
-              type="url"
-              value={newMember.imageUrl}
-              onChange={(e) => setNewMember({ ...newMember, imageUrl: e.target.value })}
-              placeholder="https://example.com/member-face.jpg"
-            />
-
-            <button type="button" className="add-member-btn" onClick={addFamilyMember}>
-              + Add Family Member
-            </button>
-          </div>
-
-          {/* Family Members List */}
-          {familyMembers.length > 0 && (
-            <div className="family-list">
-              <h4 className="list-title">Added Members</h4>
-              <ul className="members-list">
-                {familyMembers.map((member) => (
-                  <li key={member.id} className="member-item">
-                    <div className="member-info">
-                      <span className="member-name">{member.name}</span>
-                      <span className="member-relation">{member.relation}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="remove-btn"
-                      onClick={() => removeFamilyMember(member.id)}
-                      title="Remove member"
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
 
           <div className="status-row">
             <span className="status-led" aria-hidden="true" />

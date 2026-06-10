@@ -1,7 +1,7 @@
 import type { SignalNotification } from '../../types/dashboard'
 
 type TopbarProps = {
-  displayName: string
+  displayName: string | null
   onLogout: () => void
   renderNotifications?: () => void
   notifications?: SignalNotification[]
@@ -10,7 +10,7 @@ type TopbarProps = {
 function Topbar({ displayName, onLogout, renderNotifications, notifications = [] }: TopbarProps) {
   const autoMode = localStorage.getItem("auto")
   const hasUnreadNotifications = notifications && notifications.length > 0 && autoMode == 'true'
-
+  
   return (
     <header className="topbar glass-card">
       <div>

@@ -1,5 +1,6 @@
 import express from 'express'
 import type {Request, Response} from 'express'
+import path from 'path'
 import sensorRoutes from './routes/sensorRoutes.ts'
 import login from './routes/login.ts';
 import fan from './routes/fan.ts';
@@ -10,6 +11,7 @@ import security from './routes/security.ts';
 import register from './routes/register.ts';
 import notifications from './routes/notifications.ts'
 import boundary from './routes/boundary.ts'
+import camera from './routes/camnotify.ts'
 
 const app = express();
 const PORT = 3000;
@@ -24,7 +26,14 @@ app.use('/api', signal);
 app.use('/api', security);
 app.use('/api', register);
 app.use('/api', notifications)
-app.use('/api',boundary)
+app.use('/api', boundary)
+app.use('/api', camera)
+app.use(
+  '/api/camera',
+  express.static(
+    path.join(process.cwd(), 'src/face')
+  )
+)
 app.get('/', (req: Request, res: Response) => {
     res.send("Hello IOT project!");
 })

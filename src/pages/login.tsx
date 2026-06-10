@@ -5,11 +5,14 @@ import '../login.css'
 function Login() {
 	const [username, setUsername] = useState('')
 	const [password, setPassword] = useState('')
+	const [newPassword, setNewPassword] = useState('')
 	const [error, setError] = useState('')
 	const [status, setStatus] = useState('Idle')
+	const [isForgotMode, setIsForgotMode] = useState(false)
 
 	const handleSubmit = async(event: any) => {
 		event.preventDefault()
+		setError('')
 
 		if (!username.trim() || !password.trim()) {
 			setError('Vui long nhap day du tai khoan va mat khau.')
@@ -34,6 +37,8 @@ function Login() {
 			}
 
 			setStatus('Secure tunnel established')
+			localStorage.setItem("isLogin", JSON.stringify(true))
+			localStorage.setItem("username", username)
 			window.location.href = '/'
 
 		} catch (err) {
@@ -41,6 +46,43 @@ function Login() {
 			console.log("Username:", username, "Password:", password)
 			setError('Login failed')
 			setStatus('Authentication failed')
+		}
+	}
+
+	const handleForgotSubmit = async (event: any) => {
+		event.preventDefault()
+		setError('')
+
+		if (!username.trim() || !newPassword.trim()) {
+			setError('Vui long nhap username va mat khau moi.')
+			setStatus('Input required')
+			return
+		}
+
+		setStatus('Updating password...')
+
+		try {
+			const res = await fetch('api/put/login', {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ username, password: newPassword })
+			})
+
+			const data = await res.json()
+			if (!res.ok || data.status !== 'success') {
+				throw new Error(data?.message || 'Update failed')
+			}
+
+			setStatus('Password updated. Please login')
+			setPassword('')
+			setNewPassword('')
+			setIsForgotMode(false)
+		} catch (err) {
+			console.error('Forgot password error:', err)
+			setError('Khong the cap nhat mat khau. Vui long thu lai.')
+			setStatus('Update failed')
 		}
 	}
 
@@ -82,10 +124,10 @@ function Login() {
 					</div>
 				</aside>
 
-				<form className="iot-panel form-panel" onSubmit={handleSubmit}>
+				<form className="iot-panel form-panel" onSubmit={isForgotMode ? handleForgotSubmit : handleSubmit}>
 					<div className="form-head">
-						<p>Secure Login</p>
-						<h2>Control Center</h2>
+						<p>{isForgotMode ? 'Account Recovery' : 'Secure Login'}</p>
+						<h2>{isForgotMode ? 'Reset Password' : 'Control Center'}</h2>
 					</div>
 
 					<label htmlFor="username">Username</label>
@@ -98,15 +140,44 @@ function Login() {
 						autoComplete="username"
 					/>
 
-					<label htmlFor="password">Password</label>
+					<label htmlFor="password">{isForgotMode ? 'New Password' : 'Password'}</label>
 					<input
 						id="password"
 						type="password"
-						value={password}
-						onChange={(event) => setPassword(event.target.value)}
-						placeholder="Enter secure key"
-						autoComplete="current-password"
+						value={isForgotMode ? newPassword : password}
+						onChange={(event) => isForgotMode ? setNewPassword(event.target.value) : setPassword(event.target.value)}
+						placeholder={isForgotMode ? 'Enter new password' : 'Enter secure key'}
+						autoComplete={isForgotMode ? 'new-password' : 'current-password'}
 					/>
+
+					<div className="auth-actions">
+						{!isForgotMode ? (
+							<button
+								type="button"
+								className="forgot-btn"
+								onClick={() => {
+									setError('')
+									setStatus('Password recovery mode')
+									setIsForgotMode(true)
+								}}
+							>
+								Forgot password?
+							</button>
+						) : (
+							<button
+								type="button"
+								className="forgot-btn"
+								onClick={() => {
+									setError('')
+									setStatus('Idle')
+									setNewPassword('')
+									setIsForgotMode(false)
+								}}
+							>
+								Back to login
+							</button>
+						)}
+					</div>
 
 					<div className="status-row">
 						<span className="status-led" aria-hidden="true" />
@@ -116,12 +187,14 @@ function Login() {
 					{error ? <p className="error-text">{error}</p> : null}
 
 					<button type="submit" className="login-btn">
-						Authenticate Node
+						{isForgotMode ? 'Update Password' : 'Authenticate Node'}
 					</button>
 
-					<p className="register-link">
-						Don't have an account? <a href="/register">Register here</a>
-					</p>
+					{!isForgotMode ? (
+						<p className="register-link">
+							Don't have an account? <a href="/register">Register here</a>
+						</p>
+					) : null}
 				</form>
 			</section>
 		</main>

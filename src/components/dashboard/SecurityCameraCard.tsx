@@ -24,7 +24,7 @@ function SecurityCameraCard({
       
       {/* Header: Tiêu đề và Nhãn trạng thái */}
       <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0 }}>🚨 Cảnh báo an ninh</h3>
+        <h3 style={{ margin: 0 }}>Security Warning!</h3>
         <span 
           style={{ 
             padding: '4px 8px', 
@@ -38,7 +38,7 @@ function SecurityCameraCard({
           {isStranger ? 'Cần phê duyệt' : 'An toàn'}
         </span>
       </div>
-      <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>Hệ thống nhận diện Edge AI Camera</p>
+      <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>AI Camera System</p>
 
       {/* Khung hiển thị hình ảnh */}
       <div 
@@ -57,7 +57,7 @@ function SecurityCameraCard({
         {imageUrl ? (
           <img src={imageUrl} alt="Security Snapshot" style={{ width: '100%', height: 'auto', display: 'block' }} />
         ) : (
-          <span style={{ color: '#888', fontStyle: 'italic' }}>Chưa có hình ảnh nhận diện</span>
+          <span style={{ color: '#888', fontStyle: 'italic' }}>No face to recognize</span>
         )}
       </div>
 
@@ -75,7 +75,7 @@ function SecurityCameraCard({
               onClick={onApprove} 
               style={{ flex: 1, backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
             >
-              ✓ Lưu & Mở
+              Save and open 
             </button>
 
             {/* THÊM MỚI: Nút Mở cửa tạm thời (Không lưu mặt) */}
@@ -84,7 +84,7 @@ function SecurityCameraCard({
               onClick={onAllow} 
               style={{ flex: 1, backgroundColor: '#007bff', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
             >
-              Mở cửa tạm
+              Open Temporary
             </button>
 
             <button 
@@ -92,7 +92,7 @@ function SecurityCameraCard({
               onClick={onReject} 
               style={{ flex: 1, backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '10px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
             >
-              ✗ Từ chối
+              Reject
             </button>
           </>
         ) : (
@@ -101,7 +101,7 @@ function SecurityCameraCard({
             onClick={onRequestTrigger} 
             style={{ width: '100%', padding: '10px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            Kích hoạt Camera (Trigger)
+            Trigger Camera
           </button>
         )}
       </div>

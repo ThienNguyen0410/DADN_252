@@ -242,6 +242,30 @@
   animation: blink 1.6s infinite;
 }
 
+.auth-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.35rem;
+}
+
+.forgot-btn {
+  border: none;
+  background: transparent;
+  color: var(--iot-accent);
+  font-size: 0.95rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.forgot-btn:hover {
+  color: var(--iot-accent-2);
+}
+
 .error-text {
   margin: 0;
   color: var(--iot-danger);
